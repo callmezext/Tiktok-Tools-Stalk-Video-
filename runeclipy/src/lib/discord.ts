@@ -5,8 +5,25 @@
  */
 
 import axios from "axios";
+import connectDB from "@/lib/mongodb";
+import SiteSetting from "@/models/SiteSetting";
 
-const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || "";
+let cachedWebhookUrl: string | null = null;
+let cacheExpiry = 0;
+
+/** Get webhook URL from DB (with 5-min cache) or fallback to env */
+async function getWebhookUrl(): Promise<string> {
+  if (cachedWebhookUrl !== null && Date.now() < cacheExpiry) return cachedWebhookUrl;
+  try {
+    await connectDB();
+    const settings = await SiteSetting.findOne().lean();
+    cachedWebhookUrl = settings?.discordWebhookUrl || process.env.DISCORD_WEBHOOK_URL || "";
+    cacheExpiry = Date.now() + 5 * 60 * 1000; // cache 5 min
+  } catch {
+    cachedWebhookUrl = process.env.DISCORD_WEBHOOK_URL || "";
+  }
+  return cachedWebhookUrl;
+}
 
 interface DiscordEmbed {
   title: string;
@@ -18,9 +35,10 @@ interface DiscordEmbed {
 }
 
 async function sendWebhook(content: string, embeds?: DiscordEmbed[]) {
-  if (!WEBHOOK_URL) return;
+  const url = await getWebhookUrl();
+  if (!url) return;
   try {
-    await axios.post(WEBHOOK_URL, { content, embeds }, {
+    await axios.post(url, { content, embeds }, {
       headers: { "Content-Type": "application/json" },
       timeout: 5000,
     });

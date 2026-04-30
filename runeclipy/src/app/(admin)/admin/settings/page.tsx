@@ -7,19 +7,25 @@ interface Settings {
   minCampaignWithdrawal: number;
   minReferralWithdrawal: number;
   referralCommissionPercent: number;
-  discordBotInvite: string;
-  mainDiscordUrl: string;
+  discordWebhookUrl: string;
+  discordBotToken: string;
+  discordGuildId: string;
+  discordInviteUrl: string;
   supportEmail: string;
 }
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<Settings>({
     platformFeePercent: 3, minCampaignWithdrawal: 10, minReferralWithdrawal: 30,
-    referralCommissionPercent: 5, discordBotInvite: "", mainDiscordUrl: "", supportEmail: "",
+    referralCommissionPercent: 5, discordWebhookUrl: "", discordBotToken: "",
+    discordGuildId: "", discordInviteUrl: "", supportEmail: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showBotToken, setShowBotToken] = useState(false);
+  const [testingWebhook, setTestingWebhook] = useState(false);
+  const [webhookTestResult, setWebhookTestResult] = useState<"success" | "fail" | null>(null);
   const [resetting, setResetting] = useState(false);
   const [resetConfirm, setResetConfirm] = useState("");
   const [resetResult, setResetResult] = useState<Record<string, number> | null>(null);
@@ -47,6 +53,20 @@ export default function AdminSettingsPage() {
     finally { setSaving(false); }
   };
 
+  const handleTestWebhook = async () => {
+    setTestingWebhook(true);
+    setWebhookTestResult(null);
+    try {
+      const res = await fetch("/api/admin/test-webhook", { method: "POST" });
+      const data = await res.json();
+      setWebhookTestResult(data.success ? "success" : "fail");
+    } catch {
+      setWebhookTestResult("fail");
+    }
+    setTestingWebhook(false);
+    setTimeout(() => setWebhookTestResult(null), 4000);
+  };
+
   const handleReset = async () => {
     if (resetConfirm !== "RESET") return;
     setResetting(true);
@@ -67,6 +87,11 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const maskToken = (token: string) => {
+    if (!token || token.length < 12) return token;
+    return token.substring(0, 6) + "••••••" + token.substring(token.length - 4);
+  };
+
   if (loading) return <div className="flex items-center justify-center py-20"><div className="text-4xl animate-pulse">⚙️</div></div>;
 
   return (
@@ -74,6 +99,7 @@ export default function AdminSettingsPage() {
       <h1 className="text-2xl font-bold mb-8">Platform Settings</h1>
 
       <form onSubmit={handleSave} className="space-y-6">
+        {/* ═══ Financial ═══ */}
         <div className="glass-card p-6 space-y-4">
           <h3 className="font-bold mb-2">💰 Financial</h3>
           <div className="grid grid-cols-2 gap-4">
@@ -104,20 +130,105 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
+        {/* ═══ Discord Bot Credentials ═══ */}
         <div className="glass-card p-6 space-y-4">
-          <h3 className="font-bold mb-2">💬 Discord & Support</h3>
-          <div>
-            <label className="block text-sm text-text-secondary mb-1.5">Discord Bot Invite URL</label>
-            <input type="url" value={settings.discordBotInvite}
-              onChange={(e) => setSettings({ ...settings, discordBotInvite: e.target.value })}
-              className="input-field" placeholder="https://discord.com/api/oauth2/..." />
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-bold">🤖 Discord Bot</h3>
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${settings.discordBotToken ? "bg-success/20 text-success" : "bg-bg-tertiary text-text-muted"}`}>
+              {settings.discordBotToken ? "✓ Configured" : "Not Set"}
+            </span>
           </div>
+          <p className="text-xs text-text-muted -mt-2 mb-3">
+            Create a bot at{" "}
+            <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer"
+              className="text-accent-light hover:text-accent underline">Discord Developer Portal</a>
+          </p>
+
           <div>
-            <label className="block text-sm text-text-secondary mb-1.5">Main Discord Server URL</label>
-            <input type="url" value={settings.mainDiscordUrl}
-              onChange={(e) => setSettings({ ...settings, mainDiscordUrl: e.target.value })}
-              className="input-field" placeholder="https://discord.gg/..." />
+            <label className="block text-sm text-text-secondary mb-1.5">Bot Token</label>
+            <div className="relative">
+              <input
+                type={showBotToken ? "text" : "password"}
+                value={showBotToken ? settings.discordBotToken : maskToken(settings.discordBotToken)}
+                onChange={(e) => setSettings({ ...settings, discordBotToken: e.target.value })}
+                onFocus={() => setShowBotToken(true)}
+                className="input-field pr-20 font-mono text-xs"
+                placeholder="MTIz...abc"
+              />
+              <button
+                type="button"
+                onClick={() => setShowBotToken(!showBotToken)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-text-muted hover:text-text-secondary px-2 py-1 rounded bg-bg-tertiary"
+              >
+                {showBotToken ? "Hide" : "Show"}
+              </button>
+            </div>
           </div>
+
+          <div>
+            <label className="block text-sm text-text-secondary mb-1.5">Guild (Server) ID</label>
+            <input
+              type="text"
+              value={settings.discordGuildId}
+              onChange={(e) => setSettings({ ...settings, discordGuildId: e.target.value })}
+              className="input-field font-mono text-xs"
+              placeholder="123456789012345678"
+            />
+          </div>
+        </div>
+
+        {/* ═══ Discord Webhook ═══ */}
+        <div className="glass-card p-6 space-y-4">
+          <h3 className="font-bold mb-2">🔔 Discord Webhook</h3>
+          <p className="text-xs text-text-muted -mt-2 mb-3">
+            Webhook URL untuk notifikasi otomatis (submission baru, approval, payout, dll).
+          </p>
+
+          <div>
+            <label className="block text-sm text-text-secondary mb-1.5">Webhook URL</label>
+            <input
+              type="url"
+              value={settings.discordWebhookUrl}
+              onChange={(e) => setSettings({ ...settings, discordWebhookUrl: e.target.value })}
+              className="input-field text-xs"
+              placeholder="https://discord.com/api/webhooks/..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-text-secondary mb-1.5">Discord Invite URL</label>
+            <input
+              type="url"
+              value={settings.discordInviteUrl}
+              onChange={(e) => setSettings({ ...settings, discordInviteUrl: e.target.value })}
+              className="input-field text-xs"
+              placeholder="https://discord.gg/runeclipy"
+            />
+          </div>
+
+          {settings.discordWebhookUrl && (
+            <button
+              type="button"
+              onClick={handleTestWebhook}
+              disabled={testingWebhook}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-[#5865F2]/20 text-[#5865F2] hover:bg-[#5865F2]/30 transition-all disabled:opacity-50"
+            >
+              {testingWebhook ? (
+                <><span className="animate-spin">⏳</span> Sending...</>
+              ) : webhookTestResult === "success" ? (
+                <><span>✅</span> Test Sent!</>
+              ) : webhookTestResult === "fail" ? (
+                <><span>❌</span> Failed</>
+              ) : (
+                <><span>🧪</span> Test Webhook</>
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* ═══ General ═══ */}
+        <div className="glass-card p-6 space-y-4">
+          <h3 className="font-bold mb-2">🌐 General</h3>
           <div>
             <label className="block text-sm text-text-secondary mb-1.5">Support Email</label>
             <input type="email" value={settings.supportEmail}
@@ -236,4 +347,3 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
-
