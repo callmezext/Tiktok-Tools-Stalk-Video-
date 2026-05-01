@@ -170,7 +170,7 @@ export default function NewCampaignPage() {
                 className="sr-only peer"
               />
               <div className="w-5 h-5 rounded-md border-2 border-border peer-checked:border-accent peer-checked:bg-accent/20 transition-all flex items-center justify-center group-hover:border-border-hover">
-                {form.allowOldVideos && <span className="text-accent text-xs">✓</span>}
+                {form.allowOldVideos ? <span className="text-accent text-xs">✓</span> : null}
               </div>
             </div>
             <div>
@@ -204,7 +204,7 @@ export default function NewCampaignPage() {
                 <input type="checkbox" checked={form.autoApprove}
                   onChange={(e) => setForm({ ...form, autoApprove: e.target.checked })} className="sr-only peer" />
                 <div className="w-5 h-5 rounded-md border-2 border-border peer-checked:border-success peer-checked:bg-success/20 transition-all flex items-center justify-center group-hover:border-border-hover">
-                  {form.autoApprove && <span className="text-success text-xs">✓</span>}
+                  {form.autoApprove ? <span className="text-success text-xs">✓</span> : null}
                 </div>
               </div>
               <div>

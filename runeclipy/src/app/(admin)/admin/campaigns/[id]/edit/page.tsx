@@ -194,7 +194,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
               <input type="checkbox" checked={f.allowOldVideos as boolean}
                 onChange={(e) => setForm({ ...f, allowOldVideos: e.target.checked })} className="sr-only peer" />
               <div className="w-5 h-5 rounded-md border-2 border-border peer-checked:border-accent peer-checked:bg-accent/20 transition-all flex items-center justify-center">
-                {Boolean(f.allowOldVideos) && <span className="text-accent text-xs">✓</span>}
+                {Boolean(f.allowOldVideos) ? <span className="text-accent text-xs">✓</span> : null}
               </div>
             </div>
             <span className="text-sm">Bolehkan video lama</span>
@@ -213,7 +213,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
                 <input type="checkbox" checked={f.autoApprove as boolean}
                   onChange={(e) => setForm({ ...f, autoApprove: e.target.checked })} className="sr-only peer" />
                 <div className="w-5 h-5 rounded-md border-2 border-border peer-checked:border-success peer-checked:bg-success/20 transition-all flex items-center justify-center group-hover:border-border-hover">
-                  {Boolean(f.autoApprove) && <span className="text-success text-xs">✓</span>}
+                  {Boolean(f.autoApprove) ? <span className="text-success text-xs">✓</span> : null}
                 </div>
               </div>
               <div>
