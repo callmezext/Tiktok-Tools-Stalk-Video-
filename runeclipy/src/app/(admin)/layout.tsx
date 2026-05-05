@@ -13,6 +13,7 @@ const adminItems = [
   { href: "/admin/accounts", icon: "🔗", label: "Accounts" },
   { href: "/admin/payouts", icon: "💸", label: "Payouts" },
   { href: "/admin/finance", icon: "📈", label: "Finance" },
+  { href: "/admin/activity-log", icon: "📋", label: "Activity Log" },
   { href: "/admin/settings", icon: "⚙️", label: "Settings" },
 ];
 

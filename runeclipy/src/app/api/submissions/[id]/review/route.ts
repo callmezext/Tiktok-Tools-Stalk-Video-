@@ -6,6 +6,7 @@ import User from "@/models/User";
 import { getSession } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
 import { calculateEarning } from "@/lib/utils";
+import { logAdminAction } from "@/lib/activity-log";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -92,6 +93,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         });
 
         console.log(`[Admin] Approved submission ${id}: @${session.username} → earned $${submission.earned}`);
+
+        await logAdminAction({
+          actor: session.username || "admin",
+          actorId: session.userId as string,
+          action: "approve_submission",
+          target: id,
+          targetType: "submission",
+          details: `Approved submission by user ${submission.userId} for campaign "${campaign.title}". Earned $${submission.earned}`,
+        });
       }
     } else if (status === "rejected") {
       // Notify user about rejection
@@ -104,6 +114,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
 
       console.log(`[Admin] Rejected submission ${id}: reason="${rejectReason}"`);
+
+      await logAdminAction({
+        actor: session.username || "admin",
+        actorId: session.userId as string,
+        action: "reject_submission",
+        target: id,
+        targetType: "submission",
+        details: `Rejected submission. Reason: ${rejectReason || "Not specified"}`,
+      });
     }
 
     await submission.save();

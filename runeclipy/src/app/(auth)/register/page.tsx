@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [agreedTerms, setAgreedTerms] = useState(false);
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,7 +144,18 @@ export default function RegisterPage() {
               onChange={(e) => setForm({ ...form, referralCode: e.target.value.toLowerCase() })}
               className="input-field font-mono" placeholder="friend_username" />
           </div>
-          <button type="submit" disabled={loading} className="btn-gradient w-full !rounded-xl text-sm !py-3 disabled:opacity-50">
+          <div className="flex items-start gap-2">
+            <input type="checkbox" id="terms" checked={agreedTerms}
+              onChange={(e) => setAgreedTerms(e.target.checked)}
+              className="mt-1 accent-accent w-4 h-4 rounded" />
+            <label htmlFor="terms" className="text-xs text-text-muted leading-relaxed">
+              I agree to the{" "}
+              <Link href="/creator-terms" target="_blank" className="text-accent-light hover:underline">Terms of Service</Link>
+              {" "}and{" "}
+              <Link href="/privacy-policy" target="_blank" className="text-accent-light hover:underline">Privacy Policy</Link>
+            </label>
+          </div>
+          <button type="submit" disabled={loading || !agreedTerms} className="btn-gradient w-full !rounded-xl text-sm !py-3 disabled:opacity-50">
             {loading ? "Sending OTP..." : "Continue →"}
           </button>
         </form>

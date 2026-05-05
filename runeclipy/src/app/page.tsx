@@ -1,8 +1,41 @@
 import Link from "next/link";
 import HeroScene from "@/components/landing/HeroScene";
 import GlitchText from "@/components/landing/GlitchText";
+import connectDB from "@/lib/mongodb";
+import User from "@/models/User";
+import Campaign from "@/models/Campaign";
+import Submission from "@/models/Submission";
 
-export default function LandingPage() {
+function formatStat(n: number): string {
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M+`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K+`;
+  return n.toString();
+}
+
+async function getPlatformStats() {
+  try {
+    await connectDB();
+    const [totalCreators, totalCampaigns, totalPaidOut] = await Promise.all([
+      User.countDocuments({ isDeleted: { $ne: true } }),
+      Campaign.countDocuments(),
+      Submission.aggregate([
+        { $match: { status: "approved" } },
+        { $group: { _id: null, total: { $sum: "$earned" } } },
+      ]),
+    ]);
+    return {
+      creators: totalCreators,
+      campaigns: totalCampaigns,
+      paidOut: totalPaidOut[0]?.total || 0,
+    };
+  } catch {
+    return { creators: 0, campaigns: 0, paidOut: 0 };
+  }
+}
+
+export default async function LandingPage() {
+  const stats = await getPlatformStats();
+
   return (
     <main className="min-h-screen bg-bg-primary relative overflow-hidden">
       {/* ═══ Background Gradient Orbs ═══ */}
@@ -36,7 +69,7 @@ export default function LandingPage() {
           <div className="animate-fadeInUp">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent-light text-sm font-medium mb-6">
               <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              Creators have earned $5M+ on campaigns
+              {stats.paidOut > 0 ? `Creators have earned $${formatStat(stats.paidOut)} on campaigns` : "Join and start earning from campaigns"}
             </div>
             <h1 className="text-4xl md:text-6xl font-extrabold leading-[1.1] mb-6">
               Turn your <span className="gradient-text">content</span> into{" "}
@@ -55,12 +88,12 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            {/* Stats */}
+            {/* Live Stats from DB */}
             <div className="flex gap-8 mt-12">
               {[
-                { value: "100K+", label: "Creators" },
-                { value: "$5M+", label: "Paid Out" },
-                { value: "200+", label: "Campaigns" },
+                { value: stats.creators > 0 ? formatStat(stats.creators) : "0", label: "Creators" },
+                { value: stats.paidOut > 0 ? `$${formatStat(stats.paidOut)}` : "$0", label: "Paid Out" },
+                { value: stats.campaigns > 0 ? formatStat(stats.campaigns) : "0", label: "Campaigns" },
               ].map((stat) => (
                 <div key={stat.label} className="text-center">
                   <div className="text-2xl md:text-3xl font-extrabold gradient-text">{stat.value}</div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { formatCurrency, formatNumber, cn } from "@/lib/utils";
 
 interface Stats {
@@ -106,6 +107,38 @@ export default function AdminDashboardPage() {
       <div className="admin-page-header">
         <h1>Dashboard Overview</h1>
         <p>Real-time platform analytics & performance metrics</p>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 sm:mb-8">
+        <Link href="/admin/submissions" className="glass-card p-3 sm:p-4 flex items-center gap-3 hover:border-warning/50 transition-all group">
+          <span className="text-xl sm:text-2xl group-hover:scale-110 transition-transform">⏳</span>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-xl font-bold text-warning">{stats?.pendingSubmissions || 0}</div>
+            <div className="text-[10px] text-text-muted uppercase">Pending Review</div>
+          </div>
+        </Link>
+        <Link href="/admin/payouts" className="glass-card p-3 sm:p-4 flex items-center gap-3 hover:border-pink/50 transition-all group">
+          <span className="text-xl sm:text-2xl group-hover:scale-110 transition-transform">💸</span>
+          <div className="min-w-0">
+            <div className="text-lg sm:text-xl font-bold text-pink">{stats?.pendingPayouts || 0}</div>
+            <div className="text-[10px] text-text-muted uppercase">Pending Payouts</div>
+          </div>
+        </Link>
+        <Link href="/admin/campaigns/new" className="glass-card p-3 sm:p-4 flex items-center gap-3 hover:border-accent/50 transition-all group">
+          <span className="text-xl sm:text-2xl group-hover:scale-110 transition-transform">➕</span>
+          <div className="min-w-0">
+            <div className="text-sm font-bold text-accent-light">New</div>
+            <div className="text-[10px] text-text-muted uppercase">Create Campaign</div>
+          </div>
+        </Link>
+        <Link href="/admin/activity-log" className="glass-card p-3 sm:p-4 flex items-center gap-3 hover:border-info/50 transition-all group">
+          <span className="text-xl sm:text-2xl group-hover:scale-110 transition-transform">📋</span>
+          <div className="min-w-0">
+            <div className="text-sm font-bold text-info">View</div>
+            <div className="text-[10px] text-text-muted uppercase">Activity Log</div>
+          </div>
+        </Link>
       </div>
 
       {/* Stat Cards */}
