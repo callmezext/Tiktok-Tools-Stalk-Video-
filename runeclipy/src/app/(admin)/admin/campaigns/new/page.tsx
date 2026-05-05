@@ -18,6 +18,7 @@ export default function NewCampaignPage() {
     fixedRatePerPost: 0,
     autoApprove: false,
     minEngagementRate: 2,
+    leaderboardBonuses: [{ rank: 1, bonus: 50 }, { rank: 2, bonus: 30 }, { rank: 3, bonus: 15 }] as { rank: number; bonus: number }[],
   });
   const [saving, setSaving] = useState(false);
 
@@ -251,6 +252,62 @@ export default function NewCampaignPage() {
               <input value={sound.videoReferenceUrl} onChange={(e) => updateSound(i, "videoReferenceUrl", e.target.value)} className="input-field text-sm" placeholder="Reference video URL (optional)" />
             </div>
           ))}
+        </div>
+
+        {/* Leaderboard Bonuses */}
+        <div className="glass-card p-6 space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="font-bold">🏆 Leaderboard Bonuses</h3>
+              <p className="text-xs text-text-muted mt-0.5">Bonus tambahan untuk top creator di campaign ini.</p>
+            </div>
+            <button type="button" onClick={() => {
+              const nextRank = (form.leaderboardBonuses.length > 0
+                ? Math.max(...form.leaderboardBonuses.map(b => b.rank)) + 1
+                : 1);
+              setForm({ ...form, leaderboardBonuses: [...form.leaderboardBonuses, { rank: nextRank, bonus: 10 }] });
+            }} className="text-xs text-accent-light hover:text-accent px-3 py-1.5 rounded-lg border border-accent/20 hover:border-accent/40 transition-all">
+              + Add Bonus Slot
+            </button>
+          </div>
+
+          {form.leaderboardBonuses.length === 0 ? (
+            <p className="text-sm text-text-muted text-center py-4">No leaderboard bonuses configured. Click &quot;+ Add Bonus Slot&quot; to add.</p>
+          ) : (
+            <div className="space-y-2">
+              {form.leaderboardBonuses.map((bonus, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-bg-primary/50 border border-border">
+                  <span className="text-lg w-8 text-center font-bold flex-shrink-0">
+                    {bonus.rank <= 3 ? ["🥇", "🥈", "🥉"][bonus.rank - 1] : `#${bonus.rank}`}
+                  </span>
+                  <div className="flex-1 grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] text-text-muted uppercase mb-1">Rank Position</label>
+                      <input type="number" value={bonus.rank} min={1}
+                        onChange={(e) => {
+                          const bonuses = [...form.leaderboardBonuses];
+                          bonuses[i] = { ...bonuses[i], rank: +e.target.value };
+                          setForm({ ...form, leaderboardBonuses: bonuses });
+                        }} className="input-field !py-2 text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-text-muted uppercase mb-1">Bonus ($)</label>
+                      <input type="number" value={bonus.bonus} min={0} step={0.5}
+                        onChange={(e) => {
+                          const bonuses = [...form.leaderboardBonuses];
+                          bonuses[i] = { ...bonuses[i], bonus: +e.target.value };
+                          setForm({ ...form, leaderboardBonuses: bonuses });
+                        }} className="input-field !py-2 text-sm" />
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => {
+                    setForm({ ...form, leaderboardBonuses: form.leaderboardBonuses.filter((_, idx) => idx !== i) });
+                  }} className="text-text-muted hover:text-error transition-colors text-xs p-1">✕</button>
+                </div>
+              ))}
+              <p className="text-[10px] text-text-muted mt-1">💡 Bonus ini diberikan ke creator berdasarkan ranking views di leaderboard campaign saat campaign berakhir.</p>
+            </div>
+          )}
         </div>
 
         {/* Discord */}

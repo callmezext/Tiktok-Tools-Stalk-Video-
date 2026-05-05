@@ -6,6 +6,7 @@ import { getSession } from "@/lib/auth";
 import { generateOTP } from "@/lib/utils";
 import { sendOTPEmail } from "@/lib/email";
 import { otpStore } from "../auth/otp/send/route";
+import { calculateTier, calculateBadges, BADGE_DEFINITIONS } from "@/lib/tier-system";
 
 export async function GET() {
   try {
@@ -17,7 +18,24 @@ export async function GET() {
 
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    // Build safe response with bind status
+    // Calculate tier & badges
+    const tierInfo = calculateTier(user.stats?.totalVideos || 0);
+    const earnedBadgeIds = calculateBadges({
+      totalVideos: user.stats?.totalVideos || 0,
+      totalEarned: user.stats?.totalEarned || 0,
+      totalViews: user.stats?.totalViews || 0,
+    });
+    const badges = earnedBadgeIds.map((id) => {
+      const def = BADGE_DEFINITIONS.find((b) => b.id === id);
+      return def || { id, label: id, emoji: "🏅", description: "" };
+    });
+
+    // Update tier in DB if changed (fire-and-forget)
+    if (user.tier !== tierInfo.tier) {
+      User.updateOne({ _id: user._id }, { tier: tierInfo.tier, badges: earnedBadgeIds }).catch(() => {});
+    }
+
+    // Build safe response
     const { password, googleId, discordId, ...safeUser } = user as unknown as Record<string, unknown>;
     return NextResponse.json({
       success: true,
@@ -26,6 +44,8 @@ export async function GET() {
         hasPassword: !!(password && (password as string).length > 0),
         hasGoogle: !!googleId,
         hasDiscord: !!discordId,
+        tierInfo,
+        badges,
       },
     });
   } catch (error) {

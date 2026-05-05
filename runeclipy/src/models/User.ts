@@ -28,6 +28,8 @@ export interface IUser extends Document {
   referralBalance: number;
   isBanned: boolean;
   isDeleted: boolean;
+  tier: "bronze" | "silver" | "gold" | "diamond";
+  badges: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -63,6 +65,8 @@ const UserSchema = new Schema<IUser>(
     referralBalance: { type: Number, default: 0 },
     isBanned: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
+    tier: { type: String, enum: ["bronze", "silver", "gold", "diamond"], default: "bronze" },
+    badges: [{ type: String }],
   },
   { timestamps: true }
 );

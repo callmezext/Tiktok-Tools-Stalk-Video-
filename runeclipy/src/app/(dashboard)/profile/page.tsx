@@ -15,6 +15,16 @@ interface UserProfile {
   hasGoogle: boolean;
   hasDiscord: boolean;
   stats: { totalVideos: number; totalEarned: number; totalViews: number };
+  tierInfo?: {
+    tier: string;
+    label: string;
+    emoji: string;
+    color: string;
+    rateBonus: number;
+    minApproved: number;
+    nextTier?: { tier: string; required: number };
+  };
+  badges?: { id: string; label: string; emoji: string; description: string }[];
 }
 
 type ModalType = "change-password" | "change-email" | "change-email-otp" | "delete-account" | null;
@@ -216,6 +226,54 @@ export default function ProfilePage() {
           <span>🗓️</span> Member since {new Date(profile.memberSince).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
         </div>
       </div>
+
+      {/* ═══ Creator Tier Card ═══ */}
+      {profile.tierInfo && (
+        <div className="glass-card p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-lg">Creator Tier</h3>
+            {profile.tierInfo.rateBonus > 0 && (
+              <span className="badge bg-success/15 text-success text-xs font-bold">+{profile.tierInfo.rateBonus}% rate bonus</span>
+            )}
+          </div>
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-bg-primary/50 border border-border">
+            <span className="text-4xl">{profile.tierInfo.emoji}</span>
+            <div className="flex-1">
+              <div className="text-lg font-extrabold">{profile.tierInfo.label} Creator</div>
+              <div className="text-xs text-text-muted mt-0.5">
+                {profile.stats.totalVideos} approved videos
+              </div>
+              {profile.tierInfo.nextTier && (
+                <div className="mt-3">
+                  <div className="flex justify-between text-[10px] text-text-muted mb-1">
+                    <span>Progress to {profile.tierInfo.nextTier.tier.charAt(0).toUpperCase() + profile.tierInfo.nextTier.tier.slice(1)}</span>
+                    <span>{profile.stats.totalVideos}/{profile.tierInfo.nextTier.required}</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{ width: `${Math.min(100, (profile.stats.totalVideos / profile.tierInfo.nextTier.required) * 100)}%` }} />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Achievement Badges ═══ */}
+      {profile.badges && profile.badges.length > 0 && (
+        <div className="glass-card p-6 mb-6">
+          <h3 className="font-bold text-lg mb-4">🏅 Achievements</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {profile.badges.map((badge) => (
+              <div key={badge.id} className="flex flex-col items-center text-center p-3 rounded-xl bg-bg-primary/50 border border-border hover:border-accent/30 transition-all group">
+                <span className="text-2xl mb-1 group-hover:scale-110 transition-transform">{badge.emoji}</span>
+                <div className="text-xs font-bold">{badge.label}</div>
+                <div className="text-[9px] text-text-muted mt-0.5">{badge.description}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ═══ Connected Accounts ═══ */}
       <div className="glass-card p-6 mb-6">

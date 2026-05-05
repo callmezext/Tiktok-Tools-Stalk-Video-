@@ -25,6 +25,7 @@ interface Campaign {
   sounds: { title: string; soundUrl: string; videoReferenceUrl: string }[];
   discordInviteUrl: string;
   startDate: string;
+  leaderboardBonuses?: { rank: number; bonus: number }[];
 }
 
 interface LeaderboardEntry {
@@ -264,6 +265,29 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
               </div>
             )}
           </div>
+
+          {/* Leaderboard Bonus Prizes */}
+          {campaign.leaderboardBonuses && campaign.leaderboardBonuses.length > 0 && (
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
+                <span>🏆</span> Bonus Prizes
+              </h3>
+              <div className="space-y-2">
+                {campaign.leaderboardBonuses
+                  .sort((a, b) => a.rank - b.rank)
+                  .map((b) => (
+                  <div key={b.rank} className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-bg-primary/50 border border-border">
+                    <span className="text-sm font-bold">
+                      {b.rank <= 3 ? ["🥇", "🥈", "🥉"][b.rank - 1] : `#${b.rank}`}
+                      <span className="text-text-muted font-normal ml-1.5">Top {b.rank}</span>
+                    </span>
+                    <span className="text-sm font-extrabold text-success">+${b.bonus.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-text-muted mt-3">💡 Bonus diberikan saat campaign berakhir berdasarkan ranking views.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

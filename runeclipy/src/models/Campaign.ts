@@ -45,6 +45,12 @@ export interface ICampaign extends Document {
   // Discord
   discordInviteUrl: string;
 
+  // Leaderboard Bonuses
+  leaderboardBonuses: {
+    rank: number;
+    bonus: number;
+  }[];
+
   // Stats (calculated)
   totalCreators: number;
   totalSubmissions: number;
@@ -96,6 +102,13 @@ const CampaignSchema = new Schema<ICampaign>(
     ],
 
     discordInviteUrl: { type: String, default: "" },
+
+    leaderboardBonuses: [
+      {
+        rank: { type: Number, required: true },
+        bonus: { type: Number, required: true },
+      },
+    ],
 
     totalCreators: { type: Number, default: 0 },
     totalSubmissions: { type: Number, default: 0 },

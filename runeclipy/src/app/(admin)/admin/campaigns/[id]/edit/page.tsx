@@ -34,6 +34,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
             autoApprove: c.autoApprove || false,
             minEngagementRate: c.minEngagementRate || 2,
             sounds: c.sounds?.length ? c.sounds : [{ title: "", tiktokSoundId: "", soundUrl: "", videoReferenceUrl: "" }],
+            leaderboardBonuses: c.leaderboardBonuses || [],
           });
         }
       })
@@ -254,6 +255,59 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
               <input value={sound.videoReferenceUrl} onChange={(e) => updateSound(i, "videoReferenceUrl", e.target.value)} className="input-field text-sm" placeholder="Reference video URL" />
             </div>
           ))}
+        </div>
+
+        {/* Leaderboard Bonuses */}
+        <div className="glass-card p-6 space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="font-bold">🏆 Leaderboard Bonuses</h3>
+              <p className="text-xs text-text-muted mt-0.5">Bonus untuk top creator campaign ini.</p>
+            </div>
+            <button type="button" onClick={() => {
+              const bonuses = (f.leaderboardBonuses as {rank:number;bonus:number}[]) || [];
+              const nextRank = bonuses.length > 0 ? Math.max(...bonuses.map((b:{rank:number}) => b.rank)) + 1 : 1;
+              setForm({ ...f, leaderboardBonuses: [...bonuses, { rank: nextRank, bonus: 10 }] });
+            }} className="text-xs text-accent-light hover:text-accent px-3 py-1.5 rounded-lg border border-accent/20 hover:border-accent/40 transition-all">
+              + Add
+            </button>
+          </div>
+          {((f.leaderboardBonuses as {rank:number;bonus:number}[]) || []).length === 0 ? (
+            <p className="text-sm text-text-muted text-center py-3">No bonuses configured.</p>
+          ) : (
+            <div className="space-y-2">
+              {((f.leaderboardBonuses as {rank:number;bonus:number}[]) || []).map((bonus: {rank:number;bonus:number}, i: number) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-bg-primary/50 border border-border">
+                  <span className="text-lg w-8 text-center font-bold flex-shrink-0">
+                    {bonus.rank <= 3 ? ["🥇", "🥈", "🥉"][bonus.rank - 1] : `#${bonus.rank}`}
+                  </span>
+                  <div className="flex-1 grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] text-text-muted uppercase mb-1">Rank</label>
+                      <input type="number" value={bonus.rank} min={1}
+                        onChange={(e) => {
+                          const bonuses = [...(f.leaderboardBonuses as {rank:number;bonus:number}[])];
+                          bonuses[i] = { ...bonuses[i], rank: +e.target.value };
+                          setForm({ ...f, leaderboardBonuses: bonuses });
+                        }} className="input-field !py-2 text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-text-muted uppercase mb-1">Bonus ($)</label>
+                      <input type="number" value={bonus.bonus} min={0} step={0.5}
+                        onChange={(e) => {
+                          const bonuses = [...(f.leaderboardBonuses as {rank:number;bonus:number}[])];
+                          bonuses[i] = { ...bonuses[i], bonus: +e.target.value };
+                          setForm({ ...f, leaderboardBonuses: bonuses });
+                        }} className="input-field !py-2 text-sm" />
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => {
+                    setForm({ ...f, leaderboardBonuses: (f.leaderboardBonuses as {rank:number;bonus:number}[]).filter((_: unknown, idx: number) => idx !== i) });
+                  }} className="text-text-muted hover:text-error transition-colors text-xs p-1">✕</button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Discord */}
