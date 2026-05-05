@@ -169,7 +169,70 @@ export default function AdminUsersPage() {
           </p>
         </div>
       ) : (
-        <div className="glass-card overflow-hidden">
+        <>
+        {/* ═══ Mobile Card Layout ═══ */}
+        <div className="space-y-3 md:hidden">
+          {filtered.map((u) => {
+            const isDisabled = actionLoading === u._id;
+            return (
+              <div key={u._id} className={cn("glass-card p-4", u.isBanned && "opacity-60")}>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="min-w-0">
+                    <div className="font-bold text-sm truncate">{u.nickname || u.username}</div>
+                    <div className="text-[11px] text-text-muted font-mono">@{u.username}</div>
+                    <div className="text-[11px] text-text-muted truncate mt-0.5">{u.email}</div>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                    <span className={`badge text-[9px] ${u.role === "admin" ? "bg-error/20 text-error" : "badge-active"}`}>{u.role}</span>
+                    {u.isBanned && <span className="badge bg-error/20 text-error text-[9px]">banned</span>}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mb-3 text-center">
+                  <div className="bg-bg-primary/50 rounded-lg p-2">
+                    <div className="text-[10px] text-text-muted uppercase">Videos</div>
+                    <div className="font-bold text-sm font-mono">{u.stats?.totalVideos || 0}</div>
+                  </div>
+                  <div className="bg-bg-primary/50 rounded-lg p-2">
+                    <div className="text-[10px] text-text-muted uppercase">Earned</div>
+                    <div className="font-bold text-sm text-success">{formatCurrency(u.stats?.totalEarned || 0)}</div>
+                  </div>
+                  <div className="bg-bg-primary/50 rounded-lg p-2">
+                    <div className="text-[10px] text-text-muted uppercase">Balance</div>
+                    <div className="font-bold text-sm font-mono">{formatCurrency((u.campaignBalance || 0) + (u.referralBalance || 0))}</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button type="button"
+                    onClick={() => toggleRole(u._id, u.role)}
+                    disabled={isDisabled}
+                    className="admin-btn admin-btn--accent flex-1 !text-[10px]"
+                  >
+                    {isDisabled ? "⏳" : u.role === "admin" ? "→ User" : "→ Admin"}
+                  </button>
+                  <button type="button"
+                    onClick={() => toggleBan(u._id, u.isBanned)}
+                    disabled={isDisabled}
+                    className={cn("admin-btn flex-1 !text-[10px]",
+                      u.isBanned ? "admin-btn--success" : "admin-btn--danger"
+                    )}
+                  >
+                    {isDisabled ? "⏳" : u.isBanned ? "Unban" : "Ban"}
+                  </button>
+                  <button type="button"
+                    onClick={() => deleteUser(u._id, u.username)}
+                    disabled={isDisabled}
+                    className="admin-btn admin-btn--danger !text-[10px]"
+                  >
+                    {isDisabled ? "⏳" : "🗑️"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ═══ Desktop Table Layout ═══ */}
+        <div className="glass-card overflow-hidden hidden md:block">
           <div className="overflow-x-auto">
             <table className="admin-table">
               <thead>
@@ -236,6 +299,7 @@ export default function AdminUsersPage() {
             </table>
           </div>
         </div>
+        </>
       )}
 
       {/* Toast */}
