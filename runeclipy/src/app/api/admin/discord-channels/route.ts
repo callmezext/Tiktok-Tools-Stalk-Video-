@@ -12,7 +12,8 @@ export async function GET() {
     }
 
     await connectDB();
-    const settings = await SiteSetting.findOne().lean();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const settings: any = await SiteSetting.findOne().lean();
     const token = settings?.discordBotToken || process.env.DISCORD_BOT_TOKEN || "";
     const guildId = settings?.discordGuildId || process.env.DISCORD_GUILD_ID || "";
 
@@ -30,15 +31,11 @@ export async function GET() {
     }
 
     const channels = await res.json();
-    // Filter text channels (type 0) and sort by position
-    const textChannels = channels
-      .filter((c: { type: number }) => c.type === 0)
-      .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
-      .map((c: { id: string; name: string; position: number }) => ({
-        id: c.id,
-        name: c.name,
-        position: c.position,
-      }));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const textChannels = (channels as any[])
+      .filter((c) => c.type === 0)
+      .sort((a, b) => a.position - b.position)
+      .map((c) => ({ id: c.id, name: c.name, position: c.position }));
 
     return NextResponse.json({ success: true, channels: textChannels });
   } catch (error) {

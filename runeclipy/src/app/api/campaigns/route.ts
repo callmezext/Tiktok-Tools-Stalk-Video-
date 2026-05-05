@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
 
       if (token && channelId && campaign.status === "active") {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://runeclipy.vercel.app";
-        const deadline = campaign.deadline
-          ? `<t:${Math.floor(new Date(campaign.deadline).getTime() / 1000)}:R>`
+        const deadline = campaign.endDate
+          ? `<t:${Math.floor(new Date(campaign.endDate).getTime() / 1000)}:R>`
           : "No deadline";
 
         await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
@@ -61,13 +61,13 @@ export async function POST(req: NextRequest) {
               description: campaign.description?.substring(0, 200) || "Campaign baru tersedia!",
               color: 0x00D4AA,
               fields: [
-                { name: "💰 Rate", value: `$${campaign.ratePerView}/view`, inline: true },
-                { name: "💵 Budget", value: `$${campaign.budget}`, inline: true },
+                { name: "💰 Rate", value: `$${campaign.ratePerMillionViews}/M views`, inline: true },
+                { name: "💵 Budget", value: `$${campaign.totalBudget}`, inline: true },
                 { name: "⏰ Deadline", value: deadline, inline: true },
               ],
               footer: { text: "Klik untuk submit video kamu! 🚀" },
               url: `${appUrl}/campaign/${campaign._id}`,
-              image: campaign.imageUrl ? { url: campaign.imageUrl } : undefined,
+              image: campaign.coverImage ? { url: campaign.coverImage } : undefined,
               timestamp: new Date().toISOString(),
             }],
           }),

@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
     }
 
     await connectDB();
-    const settings = await SiteSetting.findOne().lean();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const settings: any = await SiteSetting.findOne().lean();
     const token = settings?.discordBotToken || process.env.DISCORD_BOT_TOKEN || "";
 
     if (!token) {
