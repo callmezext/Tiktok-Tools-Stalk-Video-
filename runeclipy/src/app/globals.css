@@ -630,8 +630,112 @@ body {
 }
 
 /* ─── Responsive Helpers ─────────────── */
+
+/* Tablet */
 @media (max-width: 1024px) {
   .admin-stat-card { padding: 16px; }
+}
+
+/* Mobile — general phones */
+@media (max-width: 768px) {
+  .admin-page-header { margin-bottom: 16px; }
+  .admin-page-header h1 { font-size: 20px; }
+  .admin-page-header p { font-size: 12px; }
+
+  .admin-stat-card {
+    padding: 14px;
+    border-radius: 12px;
+  }
+  .admin-stat-card .text-2xl { font-size: 1.25rem; }
+
+  .glass-card { border-radius: 12px; }
+
+  /* Tables: horizontal scroll on mobile */
+  .admin-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -4px;
+    padding: 0 4px;
+  }
+  .admin-table { min-width: 600px; }
+  .admin-table thead th { padding: 10px 12px; font-size: 9px; }
+  .admin-table tbody td { padding: 10px 12px; font-size: 12px; }
+
+  /* Filter tabs: scrollable */
+  .admin-filter-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
+  }
+  .admin-filter-tab { padding: 6px 12px; font-size: 11px; }
+
+  /* Charts */
+  .admin-chart-bar-fill { border-radius: 2px 2px 0 0; }
+
+  /* Toast */
+  .admin-toast {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    max-width: none;
+    font-size: 12px;
+  }
+
+  /* Admin buttons */
+  .admin-btn { padding: 6px 10px; font-size: 11px; }
+
+  /* Notification dropdown */
+  .notif-dropdown-mobile {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: 60px !important;
+    width: auto !important;
+    max-height: 70vh;
+  }
+}
+
+/* Small phones (iPhone SE, 320px-380px screens) */
+@media (max-width: 480px) {
+  .admin-page-header h1 { font-size: 18px; }
+
+  .admin-stat-card {
+    padding: 12px;
+    border-radius: 10px;
+  }
+  .admin-stat-card .text-2xl { font-size: 1.1rem; }
+  .admin-stat-card .text-\[10px\] { font-size: 9px; }
+
+  .glass-card { padding: 12px !important; border-radius: 10px; }
+
+  .badge { padding: 3px 8px; font-size: 10px; }
+
+  .input-field { padding: 10px 14px; font-size: 13px; border-radius: 10px; }
+
+  .btn-gradient { padding: 10px 20px; font-size: 13px; border-radius: 10px; }
+
+  .admin-btn { padding: 5px 8px; font-size: 10px; gap: 4px; border-radius: 8px; }
+
+  /* Fix content overflow */
+  .admin-filter-tabs { gap: 2px; padding: 3px; }
+  .admin-filter-tab { padding: 5px 10px; font-size: 10px; }
+
+  .progress-bar { height: 4px; }
+}
+
+/* ─── Dashboard Layout Mobile Improvements ── */
+@media (max-width: 768px) {
+  /* Main content padding */
+  main.flex-1 { padding: 12px !important; }
+
+  /* Footer */
+  footer { padding: 12px !important; }
+  footer p, footer a { font-size: 10px !important; }
+}
+
+@media (max-width: 480px) {
+  main.flex-1 { padding: 8px !important; }
 }
 
 

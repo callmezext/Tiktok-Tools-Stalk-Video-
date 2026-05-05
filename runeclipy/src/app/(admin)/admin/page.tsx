@@ -20,7 +20,7 @@ interface CampaignBreakdown { _id: string; count: number; totalBudget: number; b
 function LoadingSkeleton() {
   return (
     <div className="space-y-8 animate-fadeIn">
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="admin-stat-card">
             <div className="admin-shimmer h-5 w-10 mb-3" />
@@ -109,7 +109,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {statCards.map((card, i) => (
           <div key={card.label} className={`admin-stat-card admin-grid-item bg-gradient-to-br ${card.gradient}`}
             style={{ animationDelay: `${i * 60}ms` }}>
@@ -123,9 +123,9 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {/* Submissions Chart */}
-        <div className="glass-card p-6">
+        <div className="glass-card p-4 sm:p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
               <h3 className="font-bold text-sm">Submissions</h3>
@@ -153,7 +153,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Users Chart */}
-        <div className="glass-card p-6">
+        <div className="glass-card p-4 sm:p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
               <h3 className="font-bold text-sm">New Users</h3>
@@ -182,9 +182,9 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Campaign Breakdown + Top Campaigns */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {/* Campaign Status Breakdown */}
-        <div className="glass-card p-6">
+        <div className="glass-card p-4 sm:p-6">
           <h3 className="font-bold text-sm mb-5">🎯 Campaign Breakdown</h3>
           {breakdown.length === 0 ? (
             <p className="text-text-muted text-sm">No campaigns yet</p>
@@ -213,7 +213,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Top Campaigns */}
-        <div className="glass-card p-6">
+        <div className="glass-card p-4 sm:p-6">
           <h3 className="font-bold text-sm mb-5">🏆 Top Campaigns</h3>
           {topCampaigns.length === 0 ? (
             <p className="text-text-muted text-sm">No active campaigns</p>
@@ -243,14 +243,14 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Recent Submissions */}
-      <div className="glass-card p-6">
+      <div className="glass-card p-4 sm:p-6">
         <h3 className="font-bold text-sm mb-5">🕐 Recent Submissions</h3>
         {recentSubs.length === 0 ? (
           <p className="text-text-muted text-sm">No submissions yet</p>
         ) : (
           <div className="space-y-1">
             {recentSubs.map((s) => (
-              <div key={s._id} className="flex items-center gap-3 py-3 px-2 rounded-xl hover:bg-bg-primary/30 transition-colors border-b border-border/20 last:border-0">
+              <div key={s._id} className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 py-3 px-2 rounded-xl hover:bg-bg-primary/30 transition-colors border-b border-border/20 last:border-0">
                 <span className={cn("status-dot",
                   s.status === "approved" ? "status-dot--active" :
                   s.status === "rejected" ? "status-dot--error" :

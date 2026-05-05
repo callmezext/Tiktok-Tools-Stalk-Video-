@@ -273,7 +273,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {notifOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-80 glass-card overflow-hidden z-50 animate-fadeInUp">
+                    <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] glass-card overflow-hidden z-50 animate-fadeInUp sm:right-0 max-sm:fixed max-sm:left-3 max-sm:right-3 max-sm:top-14 max-sm:w-auto">
                       <div className="flex items-center justify-between p-4 border-b border-border">
                         <span className="font-bold text-sm">Notifications</span>
                         {unreadCount > 0 && (
@@ -315,7 +315,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* ═══ Page Content ═══ */}
-        <main className="flex-1 p-6 max-w-7xl w-full mx-auto animate-fadeIn">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 max-w-7xl w-full mx-auto animate-fadeIn">
           {children}
         </main>
 
