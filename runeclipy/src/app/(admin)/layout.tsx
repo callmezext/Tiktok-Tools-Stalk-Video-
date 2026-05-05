@@ -14,6 +14,7 @@ const adminItems = [
   { href: "/admin/payouts", icon: "💸", label: "Payouts" },
   { href: "/admin/finance", icon: "📈", label: "Finance" },
   { href: "/admin/activity-log", icon: "📋", label: "Activity Log" },
+  { href: "/admin/discord", icon: "🤖", label: "Discord" },
   { href: "/admin/settings", icon: "⚙️", label: "Settings" },
 ];
 

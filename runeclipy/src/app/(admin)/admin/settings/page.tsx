@@ -12,6 +12,7 @@ interface Settings {
   discordBotToken: string;
   discordGuildId: string;
   discordInviteUrl: string;
+  discordNotifChannelId: string;
   supportEmail: string;
 }
 
@@ -21,7 +22,7 @@ export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<Settings>({
     platformFeePercent: 3, minCampaignWithdrawal: 10, minReferralWithdrawal: 30,
     referralCommissionPercent: 5, discordWebhookUrl: "", discordBotToken: "",
-    discordGuildId: "", discordInviteUrl: "", supportEmail: "",
+    discordGuildId: "", discordInviteUrl: "", discordNotifChannelId: "", supportEmail: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -361,6 +362,19 @@ export default function AdminSettingsPage() {
                 className="input-field font-mono text-xs"
                 placeholder="123456789012345678"
               />
+            </div>
+
+            {/* Notification Channel */}
+            <div>
+              <label className="block text-sm text-text-secondary mb-1.5">📢 Notification Channel ID</label>
+              <input
+                type="text"
+                value={settings.discordNotifChannelId}
+                onChange={(e) => setSettings({ ...settings, discordNotifChannelId: e.target.value })}
+                className="input-field font-mono text-xs"
+                placeholder="Channel ID untuk auto notifikasi campaign baru"
+              />
+              <p className="text-[10px] text-text-muted mt-1">Klik kanan channel di Discord → Copy Channel ID</p>
             </div>
           </div>
 

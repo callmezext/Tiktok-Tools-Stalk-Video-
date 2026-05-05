@@ -12,6 +12,7 @@ export interface ISiteSetting extends Document {
   discordBotToken: string;
   discordGuildId: string;
   discordInviteUrl: string;
+  discordNotifChannelId: string;
 
   // General
   siteName: string;
@@ -33,6 +34,7 @@ const SiteSettingSchema = new Schema<ISiteSetting>(
     discordBotToken: { type: String, default: "" },
     discordGuildId: { type: String, default: "" },
     discordInviteUrl: { type: String, default: "https://discord.gg/runeclipy" },
+    discordNotifChannelId: { type: String, default: "" },
 
     // General
     siteName: { type: String, default: "RuneClipy" },
