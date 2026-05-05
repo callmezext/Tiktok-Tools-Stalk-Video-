@@ -109,15 +109,15 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {statCards.map((card, i) => (
           <div key={card.label} className={`admin-stat-card admin-grid-item bg-gradient-to-br ${card.gradient}`}
             style={{ animationDelay: `${i * 60}ms` }}>
-            <div className="flex justify-between items-start mb-3">
-              <span className="text-2xl">{card.icon}</span>
+            <div className="flex justify-between items-start mb-2 sm:mb-3">
+              <span className="text-xl sm:text-2xl">{card.icon}</span>
             </div>
-            <div className="text-2xl font-extrabold tracking-tight mb-1">{card.value}</div>
-            <div className="text-[10px] text-text-muted uppercase tracking-widest font-medium">{card.label}</div>
+            <div className="text-lg sm:text-2xl font-extrabold tracking-tight mb-1 truncate">{card.value}</div>
+            <div className="text-[9px] sm:text-[10px] text-text-muted uppercase tracking-widest font-medium truncate">{card.label}</div>
           </div>
         ))}
       </div>
@@ -194,13 +194,13 @@ export default function AdminDashboardPage() {
                 const pct = b.totalBudget > 0 ? Math.round((b.budgetUsed / b.totalBudget) * 100) : 0;
                 return (
                   <div key={b._id}>
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1">
                       <div className="flex items-center gap-2">
                         <span className={cn("status-dot", statusDot[b._id])} />
                         <span className={cn("text-sm font-semibold capitalize", statusColor[b._id] || "text-text-primary")}>{b._id}</span>
                         <span className="text-xs text-text-muted bg-bg-tertiary px-2 py-0.5 rounded-lg">{b.count}</span>
                       </div>
-                      <span className="text-xs text-text-muted font-mono">{formatCurrency(b.budgetUsed)} / {formatCurrency(b.totalBudget)}</span>
+                      <span className="text-[11px] sm:text-xs text-text-muted font-mono pl-5 sm:pl-0">{formatCurrency(b.budgetUsed)} / {formatCurrency(b.totalBudget)}</span>
                     </div>
                     <div className="progress-bar">
                       <div className="progress-fill" style={{ width: `${pct}%` }} />
@@ -218,22 +218,22 @@ export default function AdminDashboardPage() {
           {topCampaigns.length === 0 ? (
             <p className="text-text-muted text-sm">No active campaigns</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {topCampaigns.map((c, i) => (
-                <div key={c._id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-bg-primary/30 transition-colors">
+                <div key={c._id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-xl hover:bg-bg-primary/30 transition-colors">
                   <span className={cn(
-                    "text-lg w-8 text-center font-bold",
+                    "text-base sm:text-lg w-7 sm:w-8 text-center font-bold flex-shrink-0",
                     i === 0 ? "trophy-gold" : i === 1 ? "trophy-silver" : i === 2 ? "trophy-bronze" : "text-text-muted"
                   )}>
                     {i < 3 ? "🏆" : `#${i + 1}`}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{typeEmoji[c.type] || "📋"} {c.title}</div>
-                    <div className="text-[10px] text-text-muted">{c.totalCreators} creators • {c.totalSubmissions} submissions</div>
+                    <div className="text-xs sm:text-sm font-medium truncate">{typeEmoji[c.type] || "📋"} {c.title}</div>
+                    <div className="text-[9px] sm:text-[10px] text-text-muted">{c.totalCreators} creators • {c.totalSubmissions} subs</div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xs font-bold font-mono">{formatCurrency(c.budgetUsed)}</div>
-                    <div className="text-[10px] text-text-muted">/ {formatCurrency(c.totalBudget)}</div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-[10px] sm:text-xs font-bold font-mono">{formatCurrency(c.budgetUsed)}</div>
+                    <div className="text-[9px] sm:text-[10px] text-text-muted">/ {formatCurrency(c.totalBudget)}</div>
                   </div>
                 </div>
               ))}
@@ -244,33 +244,67 @@ export default function AdminDashboardPage() {
 
       {/* Recent Submissions */}
       <div className="glass-card p-4 sm:p-6">
-        <h3 className="font-bold text-sm mb-5">🕐 Recent Submissions</h3>
+        <h3 className="font-bold text-sm mb-4 sm:mb-5">🕐 Recent Submissions</h3>
         {recentSubs.length === 0 ? (
           <p className="text-text-muted text-sm">No submissions yet</p>
         ) : (
-          <div className="space-y-1">
-            {recentSubs.map((s) => (
-              <div key={s._id} className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 py-3 px-2 rounded-xl hover:bg-bg-primary/30 transition-colors border-b border-border/20 last:border-0">
-                <span className={cn("status-dot",
-                  s.status === "approved" ? "status-dot--active" :
-                  s.status === "rejected" ? "status-dot--error" :
-                  "status-dot--pending"
-                )} />
-                <span className={cn("badge text-[9px]",
-                  s.status === "approved" ? "badge-active" :
-                  s.status === "rejected" ? "bg-error/20 text-error" :
-                  "badge-paused"
-                )}>{s.status}</span>
-                <div className="flex-1 min-w-0 flex items-center gap-2">
-                  <span className="text-sm font-semibold">@{s.userName}</span>
-                  <span className="text-text-muted/40">→</span>
-                  <span className="text-xs text-text-secondary truncate">{s.campaignTitle}</span>
+          <>
+            {/* Mobile: Card Layout */}
+            <div className="space-y-3 md:hidden">
+              {recentSubs.map((s) => (
+                <div key={s._id} className="bg-bg-primary/40 rounded-xl p-3 border border-border/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={cn("status-dot",
+                        s.status === "approved" ? "status-dot--active" :
+                        s.status === "rejected" ? "status-dot--error" :
+                        "status-dot--pending"
+                      )} />
+                      <span className={cn("badge text-[9px]",
+                        s.status === "approved" ? "badge-active" :
+                        s.status === "rejected" ? "bg-error/20 text-error" :
+                        "badge-paused"
+                      )}>{s.status}</span>
+                    </div>
+                    <span className="text-[10px] text-text-muted">{new Date(s.submittedAt).toLocaleDateString("id-ID")}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <span className="text-sm font-semibold">@{s.userName}</span>
+                      <span className="text-text-muted/40 mx-1">→</span>
+                      <span className="text-xs text-text-secondary">{s.campaignTitle}</span>
+                    </div>
+                    <span className="text-xs text-text-muted font-mono ml-2 flex-shrink-0">{formatNumber(s.views)} views</span>
+                  </div>
                 </div>
-                <span className="text-xs text-text-muted font-mono">{formatNumber(s.views)} views</span>
-                <span className="text-[10px] text-text-muted">{new Date(s.submittedAt).toLocaleDateString("id-ID")}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            {/* Desktop: Row Layout */}
+            <div className="space-y-1 hidden md:block">
+              {recentSubs.map((s) => (
+                <div key={s._id} className="flex items-center gap-3 py-3 px-2 rounded-xl hover:bg-bg-primary/30 transition-colors border-b border-border/20 last:border-0">
+                  <span className={cn("status-dot",
+                    s.status === "approved" ? "status-dot--active" :
+                    s.status === "rejected" ? "status-dot--error" :
+                    "status-dot--pending"
+                  )} />
+                  <span className={cn("badge text-[9px]",
+                    s.status === "approved" ? "badge-active" :
+                    s.status === "rejected" ? "bg-error/20 text-error" :
+                    "badge-paused"
+                  )}>{s.status}</span>
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    <span className="text-sm font-semibold">@{s.userName}</span>
+                    <span className="text-text-muted/40">→</span>
+                    <span className="text-xs text-text-secondary truncate">{s.campaignTitle}</span>
+                  </div>
+                  <span className="text-xs text-text-muted font-mono">{formatNumber(s.views)} views</span>
+                  <span className="text-[10px] text-text-muted">{new Date(s.submittedAt).toLocaleDateString("id-ID")}</span>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>
