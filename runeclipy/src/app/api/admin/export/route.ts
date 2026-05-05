@@ -8,7 +8,9 @@ import { getSession } from "@/lib/auth";
 
 function toCSV(headers: string[], rows: string[][]): string {
   const escape = (v: string) => `"${String(v || "").replace(/"/g, '""')}"`;
-  return [headers.map(escape).join(","), ...rows.map((r) => r.map(escape).join(","))].join("\n");
+  const BOM = "\uFEFF"; // UTF-8 BOM for Excel
+  const sepHint = "sep=,"; // Tell Excel to use comma as delimiter
+  return BOM + [sepHint, headers.map(escape).join(","), ...rows.map((r) => r.map(escape).join(","))].join("\n");
 }
 
 export async function GET(req: NextRequest) {
