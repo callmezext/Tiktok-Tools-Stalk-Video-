@@ -153,6 +153,26 @@ export default function ProfilePage() {
     }
   };
 
+  const handleDiscordUnbind = async () => {
+    if (!confirm("Are you sure you want to disconnect Discord? Make sure you have a password set.")) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "unbind_discord" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      showToast("success", "Discord disconnected");
+      fetchProfile();
+    } catch (err: unknown) {
+      showToast("error", err instanceof Error ? err.message : "Failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleDeleteAccount = async () => {
     setActionLoading(true);
     try {
@@ -381,8 +401,8 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* ── Discord (Soon) ── */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-bg-primary/50 border border-border opacity-60">
+          {/* ── Discord ── */}
+          <div className="flex items-center justify-between p-4 rounded-xl bg-bg-primary/50 border border-border">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#5865F2]/10 flex items-center justify-center">
                 <svg className="w-5 h-5 text-[#5865F2]" viewBox="0 0 24 24" fill="currentColor">
@@ -391,10 +411,33 @@ export default function ProfilePage() {
               </div>
               <div>
                 <div className="text-sm font-medium">Discord</div>
-                <div className="text-xs text-text-muted">Coming soon</div>
+                <div className="text-xs text-text-muted">{profile.hasDiscord ? "Account linked" : "Not connected"}</div>
               </div>
             </div>
-            <span className="text-xs text-text-muted px-3 py-1.5 rounded-lg bg-bg-tertiary">Soon</span>
+            {profile.hasDiscord ? (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-success/10 text-success text-xs font-semibold">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Connected
+                </div>
+                <button
+                  onClick={handleDiscordUnbind}
+                  disabled={actionLoading}
+                  className="px-3 py-1.5 rounded-lg bg-error/10 text-error text-xs font-medium hover:bg-error/20 transition-colors disabled:opacity-50"
+                >
+                  Unbind
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { window.location.href = "/api/auth/discord"; }}
+                className="px-4 py-1.5 rounded-lg bg-[#5865F2]/15 text-[#5865F2] text-xs font-semibold hover:bg-[#5865F2]/25 transition-colors"
+              >
+                Connect
+              </button>
+            )}
           </div>
 
         </div>

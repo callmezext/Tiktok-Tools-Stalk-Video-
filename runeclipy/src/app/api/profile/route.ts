@@ -210,6 +210,24 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ success: true, message: "Google account disconnected" });
     }
 
+    // ─── Unbind Discord ───────────────────────────
+    if (action === "unbind_discord") {
+      if (!user.discordId) {
+        return NextResponse.json({ error: "Discord is not connected" }, { status: 400 });
+      }
+
+      // Must have password or Google set before unbinding
+      if ((!user.password || user.password.length === 0) && !user.googleId) {
+        return NextResponse.json(
+          { error: "You must set a password before disconnecting Discord. Otherwise you won't be able to log in." },
+          { status: 400 }
+        );
+      }
+
+      user.discordId = undefined;
+      await user.save();
+      return NextResponse.json({ success: true, message: "Discord account disconnected" });
+    }
     // ─── Delete Account ──────────────────────────
     if (action === "delete_account") {
       const { password: confirmPassword } = body;
