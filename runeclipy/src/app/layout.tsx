@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({
@@ -41,6 +42,20 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased overflow-x-hidden">
         {children}
+        <Toaster
+          theme="dark"
+          position="bottom-right"
+          richColors
+          toastOptions={{
+            style: {
+              background: "#111827",
+              border: "1px solid #1E293B",
+              color: "#F9FAFB",
+              borderRadius: "12px",
+              fontSize: "13px",
+            },
+          }}
+        />
       </body>
     </html>
   );

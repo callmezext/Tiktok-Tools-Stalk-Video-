@@ -9,8 +9,6 @@ export interface ISiteSetting extends Document {
 
   // Discord
   discordWebhookUrl: string;
-  discordBotToken: string;
-  discordGuildId: string;
   discordInviteUrl: string;
   discordNotifChannelId: string;
 
@@ -31,8 +29,6 @@ const SiteSettingSchema = new Schema<ISiteSetting>(
 
     // Discord
     discordWebhookUrl: { type: String, default: "" },
-    discordBotToken: { type: String, default: "" },
-    discordGuildId: { type: String, default: "" },
     discordInviteUrl: { type: String, default: "https://discord.gg/runeclipy" },
     discordNotifChannelId: { type: String, default: "" },
 

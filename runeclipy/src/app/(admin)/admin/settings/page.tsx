@@ -9,24 +9,25 @@ interface Settings {
   minReferralWithdrawal: number;
   referralCommissionPercent: number;
   discordWebhookUrl: string;
-  discordBotToken: string;
-  discordGuildId: string;
   discordInviteUrl: string;
   discordNotifChannelId: string;
   supportEmail: string;
 }
+
+interface Channel { id: string; name: string; }
 
 type Toast = { message: string; type: "success" | "error" | "info" } | null;
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<Settings>({
     platformFeePercent: 3, minCampaignWithdrawal: 10, minReferralWithdrawal: 30,
-    referralCommissionPercent: 5, discordWebhookUrl: "", discordBotToken: "",
-    discordGuildId: "", discordInviteUrl: "", discordNotifChannelId: "", supportEmail: "",
+    referralCommissionPercent: 5, discordWebhookUrl: "",
+    discordInviteUrl: "", discordNotifChannelId: "", supportEmail: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showBotToken, setShowBotToken] = useState(false);
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [loadingChannels, setLoadingChannels] = useState(true);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [webhookTestResult, setWebhookTestResult] = useState<"success" | "fail" | null>(null);
   const [resetting, setResetting] = useState(false);
@@ -97,6 +98,14 @@ export default function AdminSettingsPage() {
       .then((d) => { if (d.success && d.settings) setSettings(d.settings); })
       .catch(console.error)
       .finally(() => setLoading(false));
+
+    fetch("/api/admin/discord-channels")
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) setChannels(d.channels);
+      })
+      .catch(console.error)
+      .finally(() => setLoadingChannels(false));
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -167,11 +176,6 @@ export default function AdminSettingsPage() {
     } catch {
       showToast("Cron check failed", "error");
     }
-  };
-
-  const maskToken = (token: string) => {
-    if (!token || token.length < 12) return token;
-    return token.substring(0, 6) + "••••••" + token.substring(token.length - 4);
   };
 
   if (loading) {
@@ -258,10 +262,6 @@ export default function AdminSettingsPage() {
                 ⚠️ {bot.error}
               </div>
             )}
-
-            {bot.status === "offline" && !settings.discordBotToken && (
-              <p className="text-xs text-text-muted">⚠️ Bot Token not set. Configure it in Discord Bot Config section.</p>
-            )}
           </div>
 
           {/* Financial */}
@@ -316,65 +316,29 @@ export default function AdminSettingsPage() {
 
         {/* RIGHT COLUMN */}
         <div className="space-y-6">
-          {/* Discord Bot Credentials */}
+          {/* Discord Bot Config */}
           <div className="glass-card p-6 space-y-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold">🤖 Discord Bot Config</h3>
-              <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full",
-                settings.discordBotToken ? "bg-success/20 text-success" : "bg-bg-tertiary text-text-muted"
-              )}>
-                {settings.discordBotToken ? "✓ Configured" : "Not Set"}
-              </span>
-            </div>
+            <h3 className="font-bold mb-2">🤖 Discord Integration</h3>
             <p className="text-xs text-text-muted -mt-2 mb-3">
-              Create a bot at{" "}
-              <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer"
-                className="text-accent-light hover:text-accent underline">Discord Developer Portal</a>
+              Bot token & Guild ID are configured via environment variables on the server.
             </p>
-
-            <div>
-              <label className="block text-sm text-text-secondary mb-1.5">Bot Token</label>
-              <div className="relative">
-                <input
-                  type={showBotToken ? "text" : "password"}
-                  value={showBotToken ? settings.discordBotToken : maskToken(settings.discordBotToken)}
-                  onChange={(e) => setSettings({ ...settings, discordBotToken: e.target.value })}
-                  onFocus={() => setShowBotToken(true)}
-                  className="input-field pr-20 font-mono text-xs"
-                  placeholder="MTIz...abc"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowBotToken(!showBotToken)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-text-muted hover:text-text-secondary px-2 py-1 rounded bg-bg-tertiary transition-colors"
-                >
-                  {showBotToken ? "Hide" : "Show"}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-text-secondary mb-1.5">Guild (Server) ID</label>
-              <input
-                type="text"
-                value={settings.discordGuildId}
-                onChange={(e) => setSettings({ ...settings, discordGuildId: e.target.value })}
-                className="input-field font-mono text-xs"
-                placeholder="123456789012345678"
-              />
-            </div>
 
             {/* Notification Channel */}
             <div>
-              <label className="block text-sm text-text-secondary mb-1.5">📢 Notification Channel ID</label>
-              <input
-                type="text"
-                value={settings.discordNotifChannelId}
-                onChange={(e) => setSettings({ ...settings, discordNotifChannelId: e.target.value })}
-                className="input-field font-mono text-xs"
-                placeholder="Channel ID untuk auto notifikasi campaign baru"
-              />
-              <p className="text-[10px] text-text-muted mt-1">Klik kanan channel di Discord → Copy Channel ID</p>
+              <label className="block text-sm text-text-secondary mb-1.5">📢 Notification Channel</label>
+              {loadingChannels ? (
+                <div className="admin-shimmer h-10 w-full rounded-lg" />
+              ) : (
+                <select 
+                  value={settings.discordNotifChannelId} 
+                  onChange={(e) => setSettings({ ...settings, discordNotifChannelId: e.target.value })}
+                  className="input-field text-xs"
+                >
+                  <option value="">— Disable Auto Notifications —</option>
+                  {channels.map(c => <option key={c.id} value={c.id}>#{c.name}</option>)}
+                </select>
+              )}
+              <p className="text-[10px] text-text-muted mt-1">Select channel for automatic new campaign notifications.</p>
             </div>
           </div>
 

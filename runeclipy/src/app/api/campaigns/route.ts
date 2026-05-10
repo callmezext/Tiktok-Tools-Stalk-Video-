@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     try {
       const SiteSetting = (await import("@/models/SiteSetting")).default;
       const settings = await SiteSetting.findOne().lean();
-      const token = settings?.discordBotToken || process.env.DISCORD_BOT_TOKEN || "";
+      const token = (settings as unknown as Record<string, string>)?.discordBotToken || process.env.DISCORD_BOT_TOKEN || "";
       const channelId = settings?.discordNotifChannelId || "";
 
       if (token && channelId && campaign.status === "active") {
