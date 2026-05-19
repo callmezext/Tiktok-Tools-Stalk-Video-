@@ -150,8 +150,8 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Stats row — matches reference: Followers | Pages | Campaigns */}
-              <div className="grid grid-cols-3 gap-3">
+              {/* Stats row */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className="text-center p-3 rounded-xl bg-bg-primary/40 border border-border/50">
                   <div className="flex items-center justify-center gap-1.5 mb-1">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-info"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -174,6 +174,44 @@ export default function DashboardPage() {
                   <div className="text-lg font-extrabold">{campaigns.length}</div>
                 </div>
               </div>
+
+              {/* Badges / Achievements */}
+              {profile.badges && profile.badges.length > 0 ? (
+                <div className="pt-3 border-t border-border/30">
+                  <div className="text-[10px] text-text-muted uppercase tracking-widest font-semibold mb-2">Badges</div>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.badges.map((badge) => (
+                      <div key={badge.id} title={badge.description} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-bg-primary/50 border border-border/50 text-[11px] font-medium text-text-secondary hover:border-accent/30 transition-colors cursor-default">
+                        <span>{badge.emoji}</span> {badge.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="pt-3 border-t border-border/30">
+                  <div className="text-[10px] text-text-muted uppercase tracking-widest font-semibold mb-2">Getting Started</div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2.5 text-[11px]">
+                      <div className={cn("w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0", profile.stats.totalVideos > 0 ? "bg-success/20 text-success" : "bg-bg-tertiary text-text-muted")}>
+                        {profile.stats.totalVideos > 0 ? <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg> : <span className="text-[8px] font-bold">1</span>}
+                      </div>
+                      <span className={profile.stats.totalVideos > 0 ? "text-text-secondary line-through opacity-50" : "text-text-secondary"}>Submit your first video</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 text-[11px]">
+                      <div className={cn("w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0", profile.stats.totalEarned > 0 ? "bg-success/20 text-success" : "bg-bg-tertiary text-text-muted")}>
+                        {profile.stats.totalEarned > 0 ? <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg> : <span className="text-[8px] font-bold">2</span>}
+                      </div>
+                      <span className={profile.stats.totalEarned > 0 ? "text-text-secondary line-through opacity-50" : "text-text-secondary"}>Earn your first payout</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 text-[11px]">
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 bg-bg-tertiary text-text-muted">
+                        <span className="text-[8px] font-bold">3</span>
+                      </div>
+                      <span className="text-text-secondary">Reach Silver tier</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
