@@ -135,14 +135,14 @@ export default function DashboardPage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-lg sm:text-xl font-bold truncate">{profile.nickname}</h2>
-                    <span className="text-base">✏️</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                   </div>
                   <p className="text-xs text-text-muted mt-0.5">
                     member since {new Date(profile.memberSince).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
                   </p>
                   {/* Approval Rate Badge */}
                   <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success/10 border border-success/20">
-                    <span className="text-success text-xs">✅</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-success"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                     <span className="text-xs font-semibold text-success">
                       Approval Rate: {profile.stats.totalVideos > 0 ? "Active" : "N/A"}
                     </span>
@@ -154,21 +154,21 @@ export default function DashboardPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center p-3 rounded-xl bg-bg-primary/40 border border-border/50">
                   <div className="flex items-center justify-center gap-1.5 mb-1">
-                    <span className="text-info text-xs">👁️</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-info"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     <span className="text-[10px] text-text-muted font-medium">Total Views</span>
                   </div>
                   <div className="text-lg font-extrabold">{formatNumber(profile.stats.totalViews)}</div>
                 </div>
                 <div className="text-center p-3 rounded-xl bg-bg-primary/40 border border-border/50">
                   <div className="flex items-center justify-center gap-1.5 mb-1">
-                    <span className="text-accent-light text-xs">📄</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-light"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                     <span className="text-[10px] text-text-muted font-medium">Videos</span>
                   </div>
                   <div className="text-lg font-extrabold">{profile.stats.totalVideos}</div>
                 </div>
                 <div className="text-center p-3 rounded-xl bg-bg-primary/40 border border-border/50">
                   <div className="flex items-center justify-center gap-1.5 mb-1">
-                    <span className="text-pink text-xs">🎬</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pink"><path d="M9 18V5l12-3v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
                     <span className="text-[10px] text-text-muted font-medium">Campaigns</span>
                   </div>
                   <div className="text-lg font-extrabold">{campaigns.length}</div>
@@ -184,7 +184,7 @@ export default function DashboardPage() {
               <div className="relative flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm font-medium text-text-muted">💰 Total Earnings</span>
+                    <span className="text-sm font-medium text-text-muted flex items-center gap-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Total Earnings</span>
                     <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
                   </div>
                   <div className="text-3xl sm:text-4xl font-extrabold gradient-text mb-3">
@@ -247,13 +247,13 @@ export default function DashboardPage() {
                 <div className="text-xl font-extrabold">{formatNumber(profile.stats.totalViews)}</div>
                 <div className="flex justify-center gap-3 mt-2">
                   <span className="inline-flex items-center gap-1 text-[9px] text-text-muted">
-                    👁️ {formatNumber(profile.stats.totalViews)}
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> {formatNumber(profile.stats.totalViews)}
                   </span>
                   <span className="inline-flex items-center gap-1 text-[9px] text-text-muted">
-                    😎 0
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/></svg> 0
                   </span>
                   <span className="inline-flex items-center gap-1 text-[9px] text-text-muted">
-                    🔥 0
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 0
                   </span>
                 </div>
               </div>
@@ -262,13 +262,13 @@ export default function DashboardPage() {
                 <div className="text-xl font-extrabold">{profile.stats.totalVideos}</div>
                 <div className="flex justify-center gap-3 mt-2">
                   <span className="inline-flex items-center gap-1 text-[9px] text-text-muted">
-                    💬 0
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 0
                   </span>
                   <span className="inline-flex items-center gap-1 text-[9px] text-text-muted">
-                    🎯 0
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> 0
                   </span>
                   <span className="inline-flex items-center gap-1 text-[9px] text-text-muted">
-                    📊 0
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> 0
                   </span>
                 </div>
               </div>
@@ -277,9 +277,45 @@ export default function DashboardPage() {
         </div>
       ) : null}
 
+      {/* ═══ Quick Actions Strip ═══ */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <Link href="/campaigns" className="glass-card p-4 flex items-center gap-4 group hover:border-accent/30 transition-all">
+          <div className="w-11 h-11 rounded-xl bg-purple-500/15 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform flex-shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm font-bold">My Submissions</div>
+            <div className="text-[11px] text-text-muted">Track your video progress</div>
+          </div>
+        </Link>
+        <Link href="/analytics" className="glass-card p-4 flex items-center gap-4 group hover:border-blue-500/30 transition-all">
+          <div className="w-11 h-11 rounded-xl bg-blue-500/15 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform flex-shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm font-bold">Analytics</div>
+            <div className="text-[11px] text-text-muted">View performance metrics</div>
+          </div>
+        </Link>
+        <Link href="/balance" className="glass-card p-4 flex items-center gap-4 group hover:border-emerald-500/30 transition-all">
+          <div className="w-11 h-11 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform flex-shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm font-bold">Balance</div>
+            <div className="text-[11px] text-text-muted">Withdraw your earnings</div>
+          </div>
+        </Link>
+      </div>
+
       {/* ═══ Campaign Section Header ═══ */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold">CAMPAIGNS</h1>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent-light"><path d="M9 18V5l12-3v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <h1 className="text-2xl font-bold">CAMPAIGNS</h1>
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-text-muted">Sort By</span>
           <select
@@ -345,8 +381,8 @@ export default function DashboardPage() {
           ))}
         </div>
       ) : filteredCampaigns.length === 0 ? (
-        <div className="text-center py-20">
-          <span className="text-5xl mb-4 block">🎵</span>
+        <div className="glass-card p-12 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-accent-light"><path d="M9 18V5l12-3v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
           <h3 className="text-lg font-semibold mb-2">No campaigns found</h3>
           <p className="text-text-muted text-sm">Check back later for new campaigns!</p>
         </div>
@@ -363,7 +399,7 @@ export default function DashboardPage() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-5xl opacity-30">🎵</div>
+                  <div className="w-full h-full flex items-center justify-center opacity-30"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-text-muted"><path d="M9 18V5l12-3v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
                 )}
                 {/* Badges */}
                 <div className="absolute bottom-2 left-2 flex gap-1.5">
