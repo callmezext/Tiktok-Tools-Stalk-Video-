@@ -135,7 +135,9 @@ export default function DashboardPage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-lg sm:text-xl font-bold truncate">{profile.nickname}</h2>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                    <Link href="/profile" title="Edit Profile" className="p-1 rounded-md hover:bg-bg-tertiary transition-colors">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted hover:text-accent-light transition-colors"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                    </Link>
                   </div>
                   <p className="text-xs text-text-muted mt-0.5">
                     member since {new Date(profile.memberSince).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
