@@ -1,16 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Outfit, Space_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
-const inter = Inter({
+const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const spaceMono = Space_Mono({
   subsets: ["latin"],
+  weight: ["400", "700"],
   variable: "--font-mono",
   display: "swap",
 });
@@ -39,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${outfit.variable} ${spaceMono.variable}`}>
       <body className="antialiased overflow-x-hidden">
         {children}
         <Toaster
