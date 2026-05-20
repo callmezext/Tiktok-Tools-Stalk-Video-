@@ -211,10 +211,18 @@ body {
   50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.5); }
 }
 
-.animate-fadeInUp { animation: fadeInUp 0.6s ease forwards; }
+.animate-fadeInUp { animation: fadeInUp 0.6s ease forwards; opacity: 0; }
 .animate-fadeIn { animation: fadeIn 0.4s ease forwards; }
 .animate-slideInLeft { animation: slideInLeft 0.5s ease forwards; }
 .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+/* ─── Hero Floating Animation ────────── */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-20px) scale(1.02); }
+}
+
+.animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
 
 /* ─── Trophy Colors ──────────────────── */
 .trophy-gold { color: #FFD700; }
