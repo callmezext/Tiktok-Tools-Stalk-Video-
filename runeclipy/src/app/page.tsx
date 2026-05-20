@@ -1,5 +1,6 @@
 import Link from "next/link";
 import GlitchText from "@/components/landing/GlitchText";
+import ParallaxBg from "@/components/landing/ParallaxBg";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 import Campaign from "@/models/Campaign";
@@ -42,6 +43,7 @@ export default async function LandingPage() {
         <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-accent/5 blur-[120px]" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-pink/5 blur-[120px]" />
         <div className="absolute top-[30%] right-[20%] w-[300px] h-[300px] rounded-full bg-accent/3 blur-[100px] animate-pulse" />
+        <ParallaxBg />
       </div>
 
       {/* ═══ Navbar ═══ */}
