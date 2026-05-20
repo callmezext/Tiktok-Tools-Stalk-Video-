@@ -2,95 +2,56 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
-const GLITCH_CHARS = "!@#$%^&*()_+-=[]{}|;:,.<>?/~`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZアイウエオカキクケコ";
+const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#&%$!?+=";
 
 export default function GlitchText({ children }: { children: string }) {
   const [display, setDisplay] = useState(children);
-  const [isGlitching, setIsGlitching] = useState(false);
-  const frameRef = useRef<number>(0);
+  const rafRef = useRef<number>(0);
+  const busyRef = useRef(false);
   const originalText = children;
 
   const scramble = useCallback(() => {
-    if (isGlitching) return;
-    setIsGlitching(true);
+    if (busyRef.current) return;
+    busyRef.current = true;
 
-    const totalFrames = 20;
     const chars = originalText.split("");
+    const total = 24;
     let frame = 0;
 
-    // Each character has its own "lock-in" frame
-    const lockFrames = chars.map((_, i) =>
-      Math.floor((i / chars.length) * totalFrames * 0.7) + Math.floor(Math.random() * 4)
+    // each char resolves at a staggered frame
+    const resolve = chars.map((_, i) =>
+      Math.floor((i / chars.length) * total * 0.65) + Math.floor(Math.random() * 5)
     );
 
     const tick = () => {
       frame++;
-      const result = chars.map((char, i) => {
-        if (char === " ") return " ";
-        if (frame >= lockFrames[i]) return char; // resolved
-        return GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+      const out = chars.map((ch, i) => {
+        if (ch === " ") return " ";
+        if (frame >= resolve[i]) return ch;
+        return CHARS[Math.floor(Math.random() * CHARS.length)];
       });
-      setDisplay(result.join(""));
+      setDisplay(out.join(""));
 
-      if (frame < totalFrames) {
-        frameRef.current = requestAnimationFrame(tick);
+      if (frame < total) {
+        rafRef.current = requestAnimationFrame(tick);
       } else {
         setDisplay(originalText);
-        setIsGlitching(false);
+        busyRef.current = false;
       }
     };
 
-    frameRef.current = requestAnimationFrame(tick);
-  }, [originalText, isGlitching]);
+    rafRef.current = requestAnimationFrame(tick);
+  }, [originalText]);
 
   useEffect(() => {
-    // Initial scramble on mount
-    const initTimer = setTimeout(() => scramble(), 600);
-
-    // Recurring scramble
-    const interval = setInterval(() => {
-      scramble();
-    }, 3500 + Math.random() * 2000);
-
+    const t = setTimeout(() => scramble(), 800);
+    const iv = setInterval(() => scramble(), 4000);
     return () => {
-      clearTimeout(initTimer);
-      clearInterval(interval);
-      cancelAnimationFrame(frameRef.current);
+      clearTimeout(t);
+      clearInterval(iv);
+      cancelAnimationFrame(rafRef.current);
     };
   }, [scramble]);
 
-  return (
-    <>
-      <style>{`
-        .cyber-text {
-          position: relative;
-          display: inline;
-          background: linear-gradient(135deg, #00F0FF, #A855F7, #FF2D7B);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.25))
-                  drop-shadow(0 0 16px rgba(168, 85, 247, 0.15));
-        }
-
-        .cyber-text.scrambling {
-          animation: cyber-flash 150ms steps(2) infinite;
-        }
-
-        @keyframes cyber-flash {
-          0%, 100% {
-            filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.25))
-                    drop-shadow(0 0 16px rgba(168, 85, 247, 0.15));
-          }
-          50% {
-            filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.45))
-                    drop-shadow(0 0 24px rgba(168, 85, 247, 0.3));
-          }
-        }
-      `}</style>
-      <span className={`cyber-text ${isGlitching ? "scrambling" : ""}`}>
-        {display}
-      </span>
-    </>
-  );
+  return <span className="gradient-text">{display}</span>;
 }
