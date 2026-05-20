@@ -34,6 +34,7 @@ export default function AdminSettingsPage() {
   const [resetConfirm, setResetConfirm] = useState("");
   const [resetResult, setResetResult] = useState<Record<string, number> | null>(null);
   const [toast, setToast] = useState<Toast>(null);
+  const [channelError, setChannelError] = useState("");
 
   // Discord Bot state
   const [bot, setBot] = useState<{
@@ -102,9 +103,10 @@ export default function AdminSettingsPage() {
     fetch("/api/admin/discord-channels")
       .then(r => r.json())
       .then(d => {
-        if (d.success) setChannels(d.channels);
+        if (d.success) { setChannels(d.channels); setChannelError(""); }
+        else setChannelError(d.error || "Failed to load channels");
       })
-      .catch(console.error)
+      .catch(() => setChannelError("Failed to load channels"))
       .finally(() => setLoadingChannels(false));
   }, []);
 
@@ -328,6 +330,15 @@ export default function AdminSettingsPage() {
               <label className="block text-sm text-text-secondary mb-1.5">📢 Notification Channel</label>
               {loadingChannels ? (
                 <div className="admin-shimmer h-10 w-full rounded-lg" />
+              ) : channelError ? (
+                <div className="space-y-2">
+                  <div className="p-3 rounded-xl bg-error/10 border border-error/20 text-error text-xs">
+                    ⚠️ {channelError}
+                  </div>
+                  <select disabled className="input-field text-xs opacity-50 cursor-not-allowed">
+                    <option>— Channels unavailable —</option>
+                  </select>
+                </div>
               ) : (
                 <select 
                   value={settings.discordNotifChannelId} 

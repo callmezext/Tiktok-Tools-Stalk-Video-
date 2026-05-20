@@ -17,8 +17,13 @@ export async function GET() {
     const token = settings?.discordBotToken || process.env.DISCORD_BOT_TOKEN || "";
     const guildId = settings?.discordGuildId || process.env.DISCORD_GUILD_ID || "";
 
-    if (!token || !guildId) {
-      return NextResponse.json({ error: "Bot token or Guild ID not configured" }, { status: 400 });
+    if (!token) {
+      console.warn("[Discord Channels] No bot token found in DB or env");
+      return NextResponse.json({ success: false, error: "DISCORD_BOT_TOKEN not configured. Add it in Vercel environment variables.", channels: [] }, { status: 200 });
+    }
+    if (!guildId) {
+      console.warn("[Discord Channels] No guild ID found in DB or env");
+      return NextResponse.json({ success: false, error: "DISCORD_GUILD_ID not configured. Add it in Vercel environment variables.", channels: [] }, { status: 200 });
     }
 
     const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {

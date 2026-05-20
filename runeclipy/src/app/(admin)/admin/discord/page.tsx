@@ -46,16 +46,18 @@ export default function AdminDiscordPage() {
   const [customColor, setCustomColor] = useState("#5865F2");
   const descRef = useRef<HTMLTextAreaElement>(null);
 
+  const [channelError, setChannelError] = useState("");
+
   const showToast = useCallback((message: string, type: "success"|"error"|"info" = "success") => {
     setToast({ message, type }); setTimeout(() => setToast(null), 3000);
   }, []);
 
   useEffect(() => {
     fetch("/api/admin/discord-channels").then(r => r.json()).then(d => {
-      if (d.success) setChannels(d.channels);
-      else showToast(d.error || "Failed to load channels", "error");
-    }).catch(() => showToast("Failed to load channels", "error")).finally(() => setLoadingChannels(false));
-  }, [showToast]);
+      if (d.success) { setChannels(d.channels); setChannelError(""); }
+      else setChannelError(d.error || "Failed to load channels");
+    }).catch(() => setChannelError("Failed to load channels")).finally(() => setLoadingChannels(false));
+  }, []);
 
   const active = embeds[activeIdx] || embeds[0];
 
@@ -136,6 +138,15 @@ export default function AdminDiscordPage() {
             <label className="block text-sm font-semibold mb-2">📺 Channel</label>
             {loadingChannels ? (
               <div className="admin-shimmer h-10 w-full rounded-lg" />
+            ) : channelError ? (
+              <div className="space-y-2">
+                <div className="p-3 rounded-xl bg-error/10 border border-error/20 text-error text-xs">
+                  ⚠️ {channelError}
+                </div>
+                <select disabled className="input-field opacity-50 cursor-not-allowed">
+                  <option>— No channels available —</option>
+                </select>
+              </div>
             ) : (
               <select value={selectedChannel} onChange={e => setSelectedChannel(e.target.value)}
                 className="input-field" id="discord-channel-select">
