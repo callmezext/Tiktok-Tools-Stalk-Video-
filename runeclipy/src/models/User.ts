@@ -8,7 +8,7 @@ export interface IUser extends Document {
   googleId?: string;
   discordId?: string;
   discordUsername?: string;
-  role: "user" | "admin";
+  role: "user" | "moderator" | "admin";
   avatar?: string;
   memberSince: Date;
   referredBy?: string;
@@ -44,7 +44,7 @@ const UserSchema = new Schema<IUser>(
     googleId: { type: String, sparse: true },
     discordId: { type: String, sparse: true },
     discordUsername: { type: String, default: "" },
-    role: { type: String, enum: ["user", "admin"], default: "user" },
+    role: { type: String, enum: ["user", "moderator", "admin"], default: "user" },
     avatar: { type: String, default: "" },
     memberSince: { type: Date, default: Date.now },
     referredBy: { type: String, default: "" },

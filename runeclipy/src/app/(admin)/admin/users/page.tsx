@@ -68,8 +68,10 @@ export default function AdminUsersPage() {
   };
 
   const toggleRole = async (userId: string, role: string) => {
-    const newRole = role === "admin" ? "user" : "admin";
-    if (!confirm(`Change this user's role to "${newRole}"?${newRole === "admin" ? " ⚠️ They will have full admin access!" : ""}`)) return;
+    const cycle: Record<string, string> = { user: "moderator", moderator: "admin", admin: "user" };
+    const newRole = cycle[role] || "user";
+    const warn = newRole === "admin" ? " ⚠️ They will have full admin access!" : newRole === "moderator" ? " They will be able to review submissions." : "";
+    if (!confirm(`Change this user's role to "${newRole}"?${warn}`)) return;
 
     setActionLoading(userId);
     try {
@@ -124,6 +126,7 @@ export default function AdminUsersPage() {
   const totalBalance = users.reduce((sum, u) => sum + (u.campaignBalance || 0) + (u.referralBalance || 0), 0);
   const bannedCount = users.filter((u) => u.isBanned).length;
   const adminCount = users.filter((u) => u.role === "admin").length;
+  const modCount = users.filter((u) => u.role === "moderator").length;
 
   if (loading) {
     return (
@@ -148,6 +151,7 @@ export default function AdminUsersPage() {
             <span className="badge bg-error/20 text-error text-[10px]">🚫 {bannedCount} banned</span>
           )}
           <span className="badge bg-accent/20 text-accent-light text-[10px]">👑 {adminCount} admins</span>
+          {modCount > 0 && <span className="badge bg-info/20 text-info text-[10px]">🛡️ {modCount} mods</span>}
           <span className="text-xs text-text-muted">• Balance: {formatCurrency(totalBalance)}</span>
         </div>
       </div>
@@ -183,7 +187,7 @@ export default function AdminUsersPage() {
                     <div className="text-[11px] text-text-muted truncate mt-0.5">{u.email}</div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                    <span className={`badge text-[9px] ${u.role === "admin" ? "bg-error/20 text-error" : "badge-active"}`}>{u.role}</span>
+                    <span className={`badge text-[9px] ${u.role === "admin" ? "bg-error/20 text-error" : u.role === "moderator" ? "bg-info/20 text-info" : "badge-active"}`}>{u.role}</span>
                     {u.isBanned && <span className="badge bg-error/20 text-error text-[9px]">banned</span>}
                   </div>
                 </div>
@@ -207,7 +211,7 @@ export default function AdminUsersPage() {
                     disabled={isDisabled}
                     className="admin-btn admin-btn--accent flex-1 !text-[10px]"
                   >
-                    {isDisabled ? "⏳" : u.role === "admin" ? "→ User" : "→ Admin"}
+                    {isDisabled ? "⏳" : `→ ${({user:"Mod",moderator:"Admin",admin:"User"} as Record<string,string>)[u.role] || "Mod"}`}
                   </button>
                   <button type="button"
                     onClick={() => toggleBan(u._id, u.isBanned)}
@@ -258,7 +262,7 @@ export default function AdminUsersPage() {
                       <td className="text-text-muted text-xs">{u.email}</td>
                       <td className="text-center">
                         <div className="flex items-center justify-center gap-1">
-                          <span className={`badge text-[10px] ${u.role === "admin" ? "bg-error/20 text-error" : "badge-active"}`}>{u.role}</span>
+                          <span className={`badge text-[10px] ${u.role === "admin" ? "bg-error/20 text-error" : u.role === "moderator" ? "bg-info/20 text-info" : "badge-active"}`}>{u.role}</span>
                           {u.isBanned && <span className="badge bg-error/20 text-error text-[10px]">banned</span>}
                         </div>
                       </td>
@@ -272,7 +276,7 @@ export default function AdminUsersPage() {
                             disabled={isDisabled}
                             className="admin-btn admin-btn--accent !py-1.5 !px-2.5 !text-[10px]"
                           >
-                            {isDisabled ? "⏳" : u.role === "admin" ? "→ User" : "→ Admin"}
+                            {isDisabled ? "⏳" : `→ ${({user:"Mod",moderator:"Admin",admin:"User"} as Record<string,string>)[u.role] || "Mod"}`}
                           </button>
                           <button type="button"
                             onClick={() => toggleBan(u._id, u.isBanned)}
