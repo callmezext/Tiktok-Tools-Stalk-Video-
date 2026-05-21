@@ -764,7 +764,7 @@ body {
   .admin-stat-card .text-2xl { font-size: 1.1rem; }
   .admin-stat-card .text-\[10px\] { font-size: 9px; }
 
-  .glass-card { padding: 12px !important; border-radius: 10px; }
+  .glass-card { border-radius: 10px; }
 
   .badge { padding: 3px 8px; font-size: 10px; }
 
