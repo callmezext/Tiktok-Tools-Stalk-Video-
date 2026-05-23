@@ -10,26 +10,31 @@ import BotStatus from "@/models/BotStatus";
 
 // ─── System Prompt ───────────────────────────────────────────────────────────
 export const SYSTEM_PROMPT = `Kamu adalah AI Admin Assistant untuk platform RuneClipy — sebuah platform TikTok creator marketing.
-Kamu membantu admin mengelola platform secara efisien.
+Kamu membantu admin mengelola platform secara efisien dengan tingkat kecerdasan, ketajaman analisis, dan penalaran tingkat tinggi setara dengan Claude Opus / Claude 3.5 Sonnet.
 
 Kemampuanmu:
-- Mencari dan menganalisis data user, campaign, submission, transaksi, setting platform, dan status bot
+- Mencari dan menganalisis data user, campaign, submission, transaksi, setting platform, log aktivitas, serta Discord Server (channel, role, member)
 - Mengedit data user (role, tier, balance, ban/unban)
 - Mengelola campaign (edit status, budget)  
 - Approve/reject submission
 - Melihat dan mengubah setting platform (platform fee, minimum withdrawal, dll)
-- Melihat status dan mengontrol Discord Bot (start, stop, restart)
-- Menganalisis tren dan memberikan insight
+- Memantau status bot dan mengontrol Discord Bot (start, stop, restart)
+- Berinteraksi dengan server Discord secara penuh:
+  * Mengambil daftar text channel aktif di server Discord ('get_discord_channels')
+  * Mengirim pesan teks kustom langsung ke channel Discord tertentu ('send_discord_message')
+  * Mengambil seluruh daftar role Discord guild ('get_discord_roles')
+  * Menambah atau menghapus role Discord seorang member secara langsung berdasarkan username/user ID platform ('manage_member_role')
+- Menganalisis statistik, performa keuangan, mendeteksi kecurangan/kejanggalan data secara proaktif, dan memberikan wawasan taktis bisnis
 
-Panduan Gaya Bicara & Perilaku (SANGAT PENTING):
-1. TO THE POINT: Berikan jawaban yang langsung ke inti masalah, singkat, padat, dan profesional. JANGAN gunakan basa-basi, jangan beri salam pembuka/penutup yang panjang, dan hilangkan obrolan santai yang tidak perlu.
-2. PROSEDUR KONFIRMASI WAJIB (SEBELUM EKSEKUSI): Untuk semua aksi memodifikasi data, sensitif, atau berbahaya (seperti 'edit_user', 'edit_campaign', 'update_submission', 'edit_site_settings', 'send_bot_command'):
+Panduan Gaya Bicara & Perilaku Tingkat Tinggi (Claude-Level):
+1. PENALARAN RIGOROUS & LOGIS: Berpikirlah secara mendalam, kritis, strategis, dan analitis. Lakukan analisis step-by-step sebelum menyimpulkan data. Jika mendeteksi anomali (misal: user dengan tier tinggi tapi view rendah, atau submission video yang tidak realistis), laporkan ke admin dan beri usulan solusi mitigasi secara proaktif.
+2. TO THE POINT: Berikan jawaban yang langsung ke inti masalah, singkat, padat, profesional, dan berbobot tinggi. HILANGKAN kata-kata basa-basi, sapaan santai berlebih, atau kalimat pengantar/penutup yang tidak berguna.
+3. PROSEDUR KONFIRMASI WAJIB (SEBELUM EKSEKUSI): Untuk semua aksi memodifikasi data, bersifat sensitif, atau berbahaya (seperti 'edit_user', 'edit_campaign', 'update_submission', 'edit_site_settings', 'send_bot_command', 'send_discord_message', 'manage_member_role'):
    - Kamu TIDAK BOLEH langsung memanggil/mengeksekusi tool tersebut pada request pertama admin.
-   - Kamu harus menjawab terlebih dahulu secara to-the-point: sebutkan aksi apa yang akan dilakukan, parameter perubahannya, dampaknya secara ringkas, dan meminta konfirmasi eksplisit dari admin (misal: 'Saya akan menonaktifkan kampanye X. Apakah Anda yakin? Jawab Ya atau Tidak').
+   - Kamu wajib menjawab terlebih dahulu secara to-the-point: sebutkan aksi apa yang akan dilakukan, parameternya, dampaknya secara ringkas, dan meminta konfirmasi eksplisit dari admin (misal: 'Saya akan memberikan role VIP ke user @guntur di Discord. Apakah Anda yakin? Jawab Ya atau Tidak').
    - Hanya setelah admin membalas 'Ya', 'Ya, silakan', atau persetujuan eksplisit sejenisnya pada percakapan berikutnya, kamu diperbolehkan memanggil tool yang bersangkutan.
    - JANGAN memanggil tool pengubah data sebelum admin mengonfirmasi 'Ya' di riwayat pesan sebelumnya!
-3. Sertakan data yang relevan dalam responsmu menggunakan format yang rapi (list, tabel jika perlu).
-4. Jika ada error, jelaskan dengan jelas apa yang terjadi.
+4. Sajikan data menggunakan format Markdown yang rapi (list, tabel jika relevan).
 
 Platform context:
 - User memiliki tier: bronze, silver, gold, diamond
@@ -228,14 +233,47 @@ export const tools: FunctionDeclaration[] = [
     },
   },
   {
-    name: "send_bot_command",
-    description: "Kirim perintah kontrol ke Discord Bot: start, stop, atau restart.",
+    name: "get_discord_channels",
+    description: "Ambil daftar text channel aktif dari server Discord guild/RuneClipy.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "send_discord_message",
+    description: "Kirim pesan teks kustom ke channel Discord tertentu menggunakan Discord Bot.",
     parameters: {
       type: SchemaType.OBJECT,
       properties: {
-        command: { type: SchemaType.STRING, description: "Perintah: start, stop, restart" },
+        channelId: { type: SchemaType.STRING, description: "ID channel Discord tujuan" },
+        content: { type: SchemaType.STRING, description: "Pesan teks yang ingin dikirim" },
       },
-      required: ["command"],
+      required: ["channelId", "content"],
+    },
+  },
+  {
+    name: "get_discord_roles",
+    description: "Ambil daftar seluruh role aktif beserta ID-nya di server Discord guild/RuneClipy.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "manage_member_role",
+    description: "Tambahkan atau hapus role Discord dari seorang member berdasarkan username/user ID di platform.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        userId: { type: SchemaType.STRING, description: "MongoDB ObjectId user di platform (opsional)" },
+        username: { type: SchemaType.STRING, description: "Username user di platform (opsional)" },
+        roleId: { type: SchemaType.STRING, description: "ID role Discord yang ingin dikelola" },
+        action: { type: SchemaType.STRING, description: "Aksi: add (tambah role) atau remove (hapus role)" },
+      },
+      required: ["roleId", "action"],
     },
   },
 ];
@@ -538,6 +576,148 @@ export async function executeTool(
         success: true,
         message: `Perintah '${command}' berhasil dikirim ke Bot Discord. Bot akan memprosesnya dalam beberapa detik.`,
         status,
+      };
+    }
+
+    case "get_discord_channels": {
+      const settings = await SiteSetting.findOne().lean();
+      const token = settings?.discordBotToken || process.env.DISCORD_BOT_TOKEN || "";
+      const guildId = settings?.discordGuildId || process.env.DISCORD_GUILD_ID || "";
+
+      if (!token || !guildId) {
+        return { error: "Bot token atau Guild ID Discord belum dikonfigurasi di settings." };
+      }
+
+      const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
+        headers: { Authorization: `Bot ${token}` },
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        return { error: `Gagal mengambil channel dari Discord: ${err}` };
+      }
+
+      const channels = await res.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const textChannels = (channels as any[])
+        .filter((c) => c.type === 0)
+        .sort((a, b) => a.position - b.position)
+        .map((c) => ({ id: c.id, name: c.name }));
+
+      return { success: true, count: textChannels.length, channels: textChannels };
+    }
+
+    case "send_discord_message": {
+      const settings = await SiteSetting.findOne().lean();
+      const token = settings?.discordBotToken || process.env.DISCORD_BOT_TOKEN || "";
+      const channelId = args.channelId;
+      const content = args.content;
+
+      if (!token) return { error: "Bot token Discord belum dikonfigurasi di settings." };
+      if (!channelId || !content) return { error: "channelId dan content wajib diisi." };
+
+      const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bot ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        return { error: `Gagal mengirim pesan ke Discord: ${err}` };
+      }
+
+      const msg = await res.json();
+      return { success: true, messageId: msg.id, message: "Pesan berhasil dikirim ke Discord!" };
+    }
+
+    case "get_discord_roles": {
+      const settings = await SiteSetting.findOne().lean();
+      const token = settings?.discordBotToken || process.env.DISCORD_BOT_TOKEN || "";
+      const guildId = settings?.discordGuildId || process.env.DISCORD_GUILD_ID || "";
+
+      if (!token || !guildId) {
+        return { error: "Bot token atau Guild ID Discord belum dikonfigurasi." };
+      }
+
+      const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/roles`, {
+        headers: { Authorization: `Bot ${token}` },
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        return { error: `Gagal mengambil role dari Discord: ${err}` };
+      }
+
+      const roles = await res.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mappedRoles = (roles as any[])
+        .filter((r) => r.name !== "@everyone" && !r.managed)
+        .map((r) => ({ id: r.id, name: r.name, color: r.color }));
+
+      return { success: true, count: mappedRoles.length, roles: mappedRoles };
+    }
+
+    case "manage_member_role": {
+      const settings = await SiteSetting.findOne().lean();
+      const token = settings?.discordBotToken || process.env.DISCORD_BOT_TOKEN || "";
+      const guildId = settings?.discordGuildId || process.env.DISCORD_GUILD_ID || "";
+
+      if (!token || !guildId) {
+        return { error: "Bot token atau Guild ID Discord belum dikonfigurasi." };
+      }
+
+      let user = null;
+      if (args.userId) {
+        user = await User.findById(args.userId);
+      } else if (args.username) {
+        user = await User.findOne({ username: args.username.toLowerCase() });
+      }
+
+      if (!user) {
+        return { error: "User di platform RuneClipy tidak ditemukan." };
+      }
+
+      const discordUserId = user.discordId;
+      if (!discordUserId) {
+        return { error: `User @${user.username} belum menghubungkan akun Discord mereka di platform.` };
+      }
+
+      const roleId = args.roleId;
+      const action = args.action; // "add" atau "remove"
+
+      if (!["add", "remove"].includes(action)) {
+        return { error: "Aksi tidak valid. Gunakan 'add' atau 'remove'." };
+      }
+
+      const url = `https://discord.com/api/v10/guilds/${guildId}/members/${discordUserId}/roles/${roleId}`;
+      const method = action === "add" ? "PUT" : "DELETE";
+
+      const res = await fetch(url, {
+        method,
+        headers: { Authorization: `Bot ${token}` },
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        return { error: `Gagal ${action === "add" ? "menambahkan" : "menghapus"} role di Discord: ${err}` };
+      }
+
+      await ActivityLog.create({
+        actor: actorUsername,
+        actorId,
+        action: `ai_discord_role_${action}`,
+        target: user._id.toString(),
+        targetType: "user",
+        details: `AI Assistant ${action === "add" ? "menambahkan" : "menghapus"} role Discord (ID: ${roleId}) untuk user @${user.username}`,
+      });
+
+      return {
+        success: true,
+        message: `Role Discord berhasil ${action === "add" ? "ditambahkan ke" : "dihapus dari"} user @${user.username}!`,
       };
     }
 
