@@ -7,6 +7,7 @@ import Transaction from "@/models/Transaction";
 import ActivityLog from "@/models/ActivityLog";
 import SiteSetting from "@/models/SiteSetting";
 import BotStatus from "@/models/BotStatus";
+import ScheduledTask from "@/models/ScheduledTask";
 
 // ─── System Prompt ───────────────────────────────────────────────────────────
 export const SYSTEM_PROMPT = `Kamu adalah AI Admin Assistant untuk platform RuneClipy — sebuah platform TikTok creator marketing.
@@ -24,12 +25,13 @@ Kemampuanmu:
   * Mengirim pesan teks kustom langsung ke channel Discord tertentu ('send_discord_message')
   * Mengambil seluruh daftar role Discord guild ('get_discord_roles')
   * Menambah atau menghapus role Discord seorang member secara langsung berdasarkan username/user ID platform ('manage_member_role')
+- Menjadwalkan tugas otomatis di masa depan, seperti mengirim pesan Discord pada waktu tertentu ('schedule_task')
 - Menganalisis statistik, performa keuangan, mendeteksi kecurangan/kejanggalan data secara proaktif, dan memberikan wawasan taktis bisnis
 
 Panduan Gaya Bicara & Perilaku Tingkat Tinggi (Claude-Level):
 1. PENALARAN RIGOROUS & LOGIS: Berpikirlah secara mendalam, kritis, strategis, dan analitis. Lakukan analisis step-by-step sebelum menyimpulkan data. Jika mendeteksi anomali (misal: user dengan tier tinggi tapi view rendah, atau submission video yang tidak realistis), laporkan ke admin dan beri usulan solusi mitigasi secara proaktif.
 2. TO THE POINT: Berikan jawaban yang langsung ke inti masalah, singkat, padat, profesional, dan berbobot tinggi. HILANGKAN kata-kata basa-basi, sapaan santai berlebih, atau kalimat pengantar/penutup yang tidak berguna.
-3. PROSEDUR KONFIRMASI WAJIB (SEBELUM EKSEKUSI): Untuk semua aksi memodifikasi data, bersifat sensitif, atau berbahaya (seperti 'edit_user', 'edit_campaign', 'update_submission', 'edit_site_settings', 'send_bot_command', 'send_discord_message', 'manage_member_role'):
+3. PROSEDUR KONFIRMASI WAJIB (SEBELUM EKSEKUSI): Untuk semua aksi memodifikasi data, bersifat sensitif, atau berbahaya (seperti 'edit_user', 'edit_campaign', 'update_submission', 'edit_site_settings', 'send_bot_command', 'send_discord_message', 'manage_member_role', 'schedule_task'):
    - Kamu TIDAK BOLEH langsung memanggil/mengeksekusi tool tersebut pada request pertama admin.
    - Kamu wajib menjawab terlebih dahulu secara to-the-point: sebutkan aksi apa yang akan dilakukan, parameternya, dampaknya secara ringkas, dan meminta konfirmasi eksplisit dari admin (misal: 'Saya akan memberikan role VIP ke user @guntur di Discord. Apakah Anda yakin? Jawab Ya atau Tidak').
    - Hanya setelah admin membalas 'Ya', 'Ya, silakan', atau persetujuan eksplisit sejenisnya pada percakapan berikutnya, kamu diperbolehkan memanggil tool yang bersangkutan.
@@ -274,6 +276,33 @@ export const tools: FunctionDeclaration[] = [
         action: { type: SchemaType.STRING, description: "Aksi: add (tambah role) atau remove (hapus role)" },
       },
       required: ["roleId", "action"],
+    },
+  },
+  {
+    name: "schedule_task",
+    description: "Jadwalkan tugas otomatis di masa depan, seperti mengirim pesan Discord.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        taskType: {
+          type: SchemaType.STRING,
+          description: "Jenis tugas yang dijadwalkan. Saat ini hanya mendukung: 'send_discord_message'",
+        },
+        payload: {
+          type: SchemaType.OBJECT,
+          description: "Data/payload yang dibutuhkan untuk tugas tersebut. Untuk 'send_discord_message' wajib berisi { channelId, content }",
+          properties: {
+            channelId: { type: SchemaType.STRING, description: "ID channel Discord tujuan" },
+            content: { type: SchemaType.STRING, description: "Pesan teks yang ingin dikirim" },
+          },
+          required: ["channelId", "content"],
+        },
+        executeAt: {
+          type: SchemaType.STRING,
+          description: "Waktu eksekusi tugas dalam format string tanggal ISO (ISO 8601 string, misalnya '2026-05-24T10:00:00Z')",
+        },
+      },
+      required: ["taskType", "payload", "executeAt"],
     },
   },
 ];
@@ -718,6 +747,47 @@ export async function executeTool(
       return {
         success: true,
         message: `Role Discord berhasil ${action === "add" ? "ditambahkan ke" : "dihapus dari"} user @${user.username}!`,
+      };
+    }
+
+    case "schedule_task": {
+      const { taskType, payload, executeAt } = args;
+
+      if (taskType !== "send_discord_message") {
+        return { error: "Jenis tugas tidak didukung. Hanya mendukung 'send_discord_message' saat ini." };
+      }
+
+      const executeDate = new Date(executeAt);
+      if (isNaN(executeDate.getTime())) {
+        return { error: "Format waktu executeAt tidak valid. Harus berupa string ISO 8601." };
+      }
+
+      if (executeDate <= new Date()) {
+        return { error: "Waktu eksekusi harus di masa depan." };
+      }
+
+      const task = await ScheduledTask.create({
+        taskType,
+        payload,
+        executeAt: executeDate,
+        status: "pending",
+      });
+
+      // Log activity
+      await ActivityLog.create({
+        actor: actorUsername,
+        actorId,
+        action: "ai_schedule_task",
+        target: task._id.toString(),
+        targetType: "task",
+        details: `AI Assistant menjadwalkan tugas '${taskType}' untuk dieksekusi pada ${executeDate.toISOString()}`,
+      });
+
+      return {
+        success: true,
+        taskId: task._id.toString(),
+        message: `Tugas '${taskType}' berhasil dijadwalkan pada ${executeDate.toLocaleString()}`,
+        task,
       };
     }
 

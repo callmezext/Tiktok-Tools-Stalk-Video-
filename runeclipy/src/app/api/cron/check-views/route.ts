@@ -12,6 +12,8 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Submission from "@/models/Submission";
 import Campaign from "@/models/Campaign";
+import ScheduledTask from "@/models/ScheduledTask";
+import SiteSetting from "@/models/SiteSetting";
 import { scrapeTikTokVideo } from "@/lib/tiktok-scraper";
 import { calculateEarning } from "@/lib/utils";
 
@@ -30,6 +32,55 @@ export async function GET(req: Request) {
     await connectDB();
 
     const now = new Date();
+
+    // ─── Process Scheduled Tasks ───────────────────────────────────────────
+    try {
+      const pendingTasks = await ScheduledTask.find({
+        status: "pending",
+        executeAt: { $lte: now },
+      });
+
+      if (pendingTasks.length > 0) {
+        console.log(`[RuneClipy:Cron] Processing ${pendingTasks.length} scheduled tasks...`);
+        const settings = await SiteSetting.findOne().lean();
+        const token = settings?.discordBotToken || process.env.DISCORD_BOT_TOKEN || "";
+
+        for (const task of pendingTasks) {
+          try {
+            if (task.taskType === "send_discord_message") {
+              const { channelId, content } = task.payload;
+              if (!token) throw new Error("Discord Bot Token belum dikonfigurasi di setting.");
+              if (!channelId || !content) throw new Error("channelId dan content wajib ada.");
+
+              const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+                method: "POST",
+                headers: {
+                  Authorization: `Bot ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ content }),
+              });
+
+              if (!res.ok) {
+                const err = await res.text();
+                throw new Error(`Discord API: ${err}`);
+              }
+            }
+
+            task.status = "completed";
+            await task.save();
+            console.log(`[RuneClipy:Cron] Task ${task._id} completed successfully`);
+          } catch (taskErr) {
+            console.error(`[RuneClipy:Cron] Task ${task._id} failed:`, taskErr);
+            task.status = "failed";
+            task.error = (taskErr as Error).message;
+            await task.save();
+          }
+        }
+      }
+    } catch (cronTaskErr) {
+      console.error("[RuneClipy:Cron] Gagal memproses scheduled tasks:", cronTaskErr);
+    }
 
     // Find approved submissions that haven't been checked in 1+ hours
     // Stagger: group by userId, pick oldest lastCheckedAt first

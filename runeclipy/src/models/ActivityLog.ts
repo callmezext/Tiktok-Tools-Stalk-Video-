@@ -18,7 +18,7 @@ const ActivityLogSchema = new Schema<IActivityLog>(
     actorId: { type: String, required: true },
     action: { type: String, required: true, index: true },
     target: { type: String },
-    targetType: { type: String, enum: ["user", "submission", "campaign", "payout", "account", "setting"] },
+    targetType: { type: String, enum: ["user", "submission", "campaign", "payout", "account", "setting", "settings", "bot", "task"] },
     details: { type: String },
     metadata: { type: Schema.Types.Mixed },
     ip: { type: String },

@@ -1,4 +1,15 @@
 import mongoose from "mongoose";
+import dns from "dns";
+
+// Bypass local router/ISP DNS failures for MongoDB Atlas SRV lookups
+if (process.env.MONGODB_URI?.startsWith("mongodb+srv://")) {
+  try {
+    dns.setServers(["8.8.8.8", "8.8.4.4"]);
+    console.log("[RuneClipy] 🌐 Configured Google DNS (8.8.8.8) for MongoDB Atlas SRV resolution");
+  } catch (dnsErr) {
+    console.warn("[RuneClipy] ⚠️ Failed to set Google DNS servers:", dnsErr);
+  }
+}
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/runeclipy";
 
