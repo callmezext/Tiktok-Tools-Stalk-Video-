@@ -12,6 +12,7 @@ interface Settings {
   discordInviteUrl: string;
   discordNotifChannelId: string;
   supportEmail: string;
+  geminiApiKey: string;
 }
 
 type Toast = { message: string; type: "success" | "error" | "info" } | null;
@@ -21,6 +22,7 @@ export default function AdminSettingsPage() {
     platformFeePercent: 3, minCampaignWithdrawal: 10, minReferralWithdrawal: 30,
     referralCommissionPercent: 5, discordWebhookUrl: "",
     discordInviteUrl: "", discordNotifChannelId: "", supportEmail: "",
+    geminiApiKey: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -28,6 +30,8 @@ export default function AdminSettingsPage() {
   const [resetConfirm, setResetConfirm] = useState("");
   const [resetResult, setResetResult] = useState<Record<string, number> | null>(null);
   const [toast, setToast] = useState<Toast>(null);
+  const [verifyingKey, setVerifyingKey] = useState(false);
+  const [keyStatus, setKeyStatus] = useState<"idle" | "valid" | "invalid">("idle");
 
   const showToast = useCallback((message: string, type: "success" | "error" | "info" = "success") => {
     setToast({ message, type });
@@ -82,6 +86,35 @@ export default function AdminSettingsPage() {
       showToast("Reset failed", "error");
     } finally {
       setResetting(false);
+    }
+  };
+
+  const handleVerifyKey = async () => {
+    if (!settings.geminiApiKey.trim()) {
+      showToast("Masukkan API key terlebih dahulu", "error");
+      return;
+    }
+    setVerifyingKey(true);
+    setKeyStatus("idle");
+    try {
+      const res = await fetch("/api/admin/ai/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: settings.geminiApiKey }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setKeyStatus("valid");
+        showToast("✅ API key valid! AI Assistant siap digunakan.");
+      } else {
+        setKeyStatus("invalid");
+        showToast(data.error || "API key tidak valid", "error");
+      }
+    } catch {
+      setKeyStatus("invalid");
+      showToast("Gagal memverifikasi API key", "error");
+    } finally {
+      setVerifyingKey(false);
     }
   };
 
@@ -180,6 +213,73 @@ export default function AdminSettingsPage() {
 
         {/* RIGHT COLUMN */}
         <div className="space-y-6">
+          {/* AI Assistant */}
+          <div className="glass-card p-6 space-y-4 !border-accent/20">
+            <div className="flex items-center gap-3 mb-1">
+              <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 flex items-center justify-center text-lg border border-accent/20">
+                🤖
+              </span>
+              <div>
+                <h3 className="font-bold">AI Assistant</h3>
+                <p className="text-[11px] text-text-muted">Google AI Studio (Gemini 2.0 Flash)</p>
+              </div>
+              {keyStatus === "valid" && (
+                <span className="ml-auto text-[10px] font-semibold text-emerald-400 bg-emerald-400/10 px-2.5 py-1 rounded-full border border-emerald-400/20">● Connected</span>
+              )}
+              {keyStatus === "invalid" && (
+                <span className="ml-auto text-[10px] font-semibold text-red-400 bg-red-400/10 px-2.5 py-1 rounded-full border border-red-400/20">● Invalid Key</span>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm text-text-secondary mb-1.5">
+                Google AI Studio API Key
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"
+                  className="ml-2 text-accent-light text-[10px] underline underline-offset-2 hover:text-accent">
+                  Dapatkan API Key →
+                </a>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={settings.geminiApiKey}
+                  onChange={(e) => {
+                    setSettings({ ...settings, geminiApiKey: e.target.value });
+                    setKeyStatus("idle");
+                  }}
+                  className="input-field flex-1 font-mono text-sm"
+                  placeholder="AIza..."
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  onClick={handleVerifyKey}
+                  disabled={verifyingKey || !settings.geminiApiKey.trim()}
+                  className={cn(
+                    "admin-btn shrink-0 !px-4 !py-2 !text-xs transition-all",
+                    keyStatus === "valid" ? "!border-emerald-400/30 !text-emerald-400" :
+                    keyStatus === "invalid" ? "!border-red-400/30 !text-red-400" :
+                    "admin-btn--accent"
+                  )}
+                >
+                  {verifyingKey ? "⏳ Checking..." : keyStatus === "valid" ? "✅ Valid" : keyStatus === "invalid" ? "❌ Invalid" : "🔍 Verify"}
+                </button>
+              </div>
+              <p className="text-[11px] text-text-muted mt-1.5">
+                API key disimpan di database. Setelah save, AI bubble chat akan muncul di admin panel.
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-bg-primary/40 border border-border/50 text-[11px] text-text-muted space-y-1">
+              <div className="font-semibold text-text-secondary mb-1">🎯 Kemampuan AI Assistant:</div>
+              <div>• Cari &amp; edit user (role, tier, balance, ban/unban)</div>
+              <div>• Kelola campaign (status, budget, rates)</div>
+              <div>• Approve / reject submission</div>
+              <div>• Analisa statistik platform</div>
+              <div>• Lihat transaksi &amp; activity log</div>
+            </div>
+          </div>
+
           {/* CRON / View Tracking */}
           <div className="glass-card p-6">
             <h3 className="font-bold mb-1">🔄 Auto View Tracking</h3>

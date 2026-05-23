@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import AdminAIChat from "@/components/AdminAIChat";
 
 const AdminIcon = ({ d, ...props }: { d: string } & React.SVGProps<SVGSVGElement>) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}><path d={d} /></svg>
@@ -134,6 +135,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {children}
         </main>
       </div>
+
+      {/* AI Assistant Chat Bubble */}
+      <AdminAIChat />
     </div>
   );
 }
