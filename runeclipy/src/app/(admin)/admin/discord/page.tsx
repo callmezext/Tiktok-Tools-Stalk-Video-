@@ -63,9 +63,18 @@ function parseDiscordMarkdown(text: string): string {
   // 8. Strikethrough: ~~text~~
   html = html.replace(/~~([\s\S]+?)~~/g, '<del class="line-through opacity-60">$1</del>');
 
-  // 9. Quotes: > text (line-by-line)
+  // 9. Headers & Quotes (line-by-line)
   const lines = html.split("\n");
   const processedLines = lines.map(line => {
+    if (line.startsWith("# ")) {
+      return `<h1 class="text-base font-bold text-white my-1">${line.substring(2)}</h1>`;
+    }
+    if (line.startsWith("## ")) {
+      return `<h2 class="text-sm font-bold text-white my-1">${line.substring(3)}</h2>`;
+    }
+    if (line.startsWith("### ")) {
+      return `<h3 class="text-xs font-bold text-white my-1">${line.substring(4)}</h3>`;
+    }
     if (line.startsWith("&gt; ")) {
       return `<blockquote class="border-l-4 border-[#4f545c] pl-2.5 my-1 text-[#b9bbbe] italic">${line.substring(5)}</blockquote>`;
     }
@@ -266,6 +275,9 @@ export default function AdminDiscordPage() {
     { label: "<>", title: "Code", b: "`", a: "`" },
     { label: "```", title: "Code Block", b: "```\n", a: "\n```" },
     { label: ">", title: "Quote", b: "> ", a: "" },
+    { label: "H1", title: "Header 1", b: "# ", a: "" },
+    { label: "H2", title: "Header 2", b: "## ", a: "" },
+    { label: "H3", title: "Header 3", b: "### ", a: "" },
   ];
 
   const handlePreviewClick = (e: React.MouseEvent<HTMLDivElement>) => {
