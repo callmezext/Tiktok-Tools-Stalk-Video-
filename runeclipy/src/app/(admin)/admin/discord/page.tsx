@@ -30,6 +30,52 @@ function newEmbed(): DiscordEmbed {
   return { id: Math.random().toString(36).slice(2), title: "", description: "", color: 0x5865F2, content: "" };
 }
 
+function parseDiscordMarkdown(text: string): string {
+  if (!text) return "";
+
+  // 1. Escape HTML tags to prevent injection
+  let html = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+  // 2. Code blocks: ```code```
+  html = html.replace(/```([\s\S]+?)```/g, '<pre class="bg-[#2f3136] border border-white/5 p-2 rounded font-mono text-[11px] text-[#dcddde] whitespace-pre overflow-x-auto my-1.5">$1</pre>');
+
+  // 3. Inline Code: `code`
+  html = html.replace(/`([^`]+?)`/g, '<code class="bg-[#2f3136] px-1 py-0.5 rounded font-mono text-[11px] text-[#e06c75]">$1</code>');
+
+  // 4. Spoilers: ||spoiler||
+  html = html.replace(/\|\|([\s\S]+?)\|\|/g, '<span class="discord-spoiler">$1</span>');
+
+  // 5. Bold: **text**
+  html = html.replace(/\*\*([\s\S]+?)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
+
+  // 6. Underline: __text__
+  html = html.replace(/__([\s\S]+?)__/g, '<span class="underline">$1</span>');
+
+  // 7. Italic: *text* or _text_
+  html = html.replace(/\*([\s\S]+?)\*/g, '<em class="italic">$1</em>');
+  html = html.replace(/_([\s\S]+?)_/g, '<em class="italic">$1</em>');
+
+  // 8. Strikethrough: ~~text~~
+  html = html.replace(/~~([\s\S]+?)~~/g, '<del class="line-through opacity-60">$1</del>');
+
+  // 9. Quotes: > text (line-by-line)
+  const lines = html.split("\n");
+  const processedLines = lines.map(line => {
+    if (line.startsWith("&gt; ")) {
+      return `<blockquote class="border-l-4 border-[#4f545c] pl-2.5 my-1 text-[#b9bbbe] italic">${line.substring(5)}</blockquote>`;
+    }
+    return line;
+  });
+  html = processedLines.join("\n");
+
+  return html;
+}
+
 export default function AdminDiscordPage() {
   const [activeTab, setActiveTab] = useState<"bot"|"send"|"guide">("bot");
 
@@ -221,6 +267,13 @@ export default function AdminDiscordPage() {
     { label: "```", title: "Code Block", b: "```\n", a: "\n```" },
     { label: ">", title: "Quote", b: "> ", a: "" },
   ];
+
+  const handlePreviewClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains("discord-spoiler")) {
+      target.classList.toggle("revealed");
+    }
+  };
 
   const tabs = [
     { id: "bot" as const, label: "Bot & Settings", icon: "🤖" },
@@ -504,7 +557,22 @@ export default function AdminDiscordPage() {
           <div className="space-y-4">
             <div className="glass-card p-4">
               <h3 className="font-bold mb-3">👁️ Preview</h3>
-              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: "#36393f" }}>
+              <style>{`
+                .discord-spoiler {
+                  background-color: #202225;
+                  color: #202225;
+                  cursor: pointer;
+                  border-radius: 3px;
+                  padding: 0 3px;
+                  user-select: none;
+                }
+                .discord-spoiler.revealed {
+                  color: #dcddde !important;
+                  background-color: rgba(255, 255, 255, 0.1) !important;
+                  user-select: text;
+                }
+              `}</style>
+              <div className="rounded-xl overflow-hidden" style={{ backgroundColor: "#36393f" }} onClick={handlePreviewClick}>
                 {embeds.map((emb, i) => (
                   <div key={emb.id} className={cn("p-4", i > 0 && "border-t border-white/5")}>
                     {emb.content && <p className="text-sm mb-2" style={{ color: "#dcddde" }}>{emb.content}</p>}
@@ -512,14 +580,11 @@ export default function AdminDiscordPage() {
                       <div className="flex-1 p-3">
                         {emb.title && <p className="font-bold text-sm mb-1" style={{ color: "#ffffff" }}>{emb.title}</p>}
                         {emb.description && (
-                          <p className="text-xs whitespace-pre-wrap" style={{ color: "#dcddde" }}>
-                            {emb.description
-                              .replace(/\*\*(.*?)\*\*/g, "⟦B⟧$1⟦/B⟧")
-                              .replace(/\*(.*?)\*/g, "⟦I⟧$1⟦/I⟧")
-                              .replace(/~~(.*?)~~/g, "⟦S⟧$1⟦/S⟧")
-                              .replace(/__(.*?)__/g, "⟦U⟧$1⟦/U⟧")
-                            }
-                          </p>
+                          <div
+                            className="text-xs whitespace-pre-wrap"
+                            style={{ color: "#dcddde" }}
+                            dangerouslySetInnerHTML={{ __html: parseDiscordMarkdown(emb.description) }}
+                          />
                         )}
                         {emb.image?.url && (
                           <div className="mt-2 rounded overflow-hidden max-w-[300px]">
