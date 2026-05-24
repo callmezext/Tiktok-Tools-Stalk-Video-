@@ -590,7 +590,13 @@ export default function AdminDiscordPage() {
                     {emb.content && <p className="text-sm mb-2" style={{ color: "#dcddde" }}>{emb.content}</p>}
                     <div className="flex rounded" style={{ borderLeft: `4px solid #${emb.color.toString(16).padStart(6, "0")}` }}>
                       <div className="flex-1 p-3">
-                        {emb.title && <p className="font-bold text-sm mb-1" style={{ color: "#ffffff" }}>{emb.title}</p>}
+                        {emb.title && (
+                          <p
+                            className="font-bold text-sm mb-1"
+                            style={{ color: "#ffffff" }}
+                            dangerouslySetInnerHTML={{ __html: parseDiscordMarkdown(emb.title) }}
+                          />
+                        )}
                         {emb.description && (
                           <div
                             className="text-xs whitespace-pre-wrap"
