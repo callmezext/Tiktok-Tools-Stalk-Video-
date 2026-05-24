@@ -8,7 +8,7 @@ interface DiscordEmbed {
   footer?: { text: string; icon_url?: string }; content?: string;
 }
 interface Channel { id: string; name: string; }
-interface DiscordSettings { discordWebhookUrl: string; discordInviteUrl: string; discordNotifChannelId: string; }
+interface DiscordSettings { discordWebhookUrl: string; discordInviteUrl: string; discordNotifChannelId: string; discordMatrixChannelId: string; }
 type Toast = { message: string; type: "success"|"error"|"info" } | null;
 
 interface DiscordUser {
@@ -134,7 +134,7 @@ export default function AdminDiscordPage() {
 
   // Discord settings
   const [discordSettings, setDiscordSettings] = useState<DiscordSettings>({
-    discordWebhookUrl: "", discordInviteUrl: "", discordNotifChannelId: "",
+    discordWebhookUrl: "", discordInviteUrl: "", discordNotifChannelId: "", discordMatrixChannelId: "",
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [testingWebhook, setTestingWebhook] = useState(false);
@@ -285,6 +285,7 @@ export default function AdminDiscordPage() {
           discordWebhookUrl: d.settings.discordWebhookUrl || "",
           discordInviteUrl: d.settings.discordInviteUrl || "",
           discordNotifChannelId: d.settings.discordNotifChannelId || "",
+          discordMatrixChannelId: d.settings.discordMatrixChannelId || "",
         });
       }
     }).catch(console.error);
@@ -537,6 +538,33 @@ export default function AdminDiscordPage() {
                   onChange={(e) => setDiscordSettings({ ...discordSettings, discordNotifChannelId: e.target.value })}
                   className="input-field text-xs">
                   <option value="">— Disable Auto Notifications —</option>
+                  {channels.map(c => <option key={c.id} value={c.id}>#{c.name}</option>)}
+                </select>
+              )}
+            </div>
+
+            {/* Matrix Live Activity Stream Channel */}
+            <div className="glass-card p-6 space-y-4">
+              <h3 className="font-bold">🔮 Cybernetic Activity Stream Channel</h3>
+              <p className="text-xs text-text-muted -mt-2">
+                Select channel for the `#rune-matrix` live activity stream.
+              </p>
+              {loadingChannels ? (
+                <div className="admin-shimmer h-10 w-full rounded-lg" />
+              ) : channelError ? (
+                <div className="space-y-2">
+                  <div className="p-3 rounded-xl bg-error/10 border border-error/20 text-error text-xs">
+                    ⚠️ {channelError}
+                  </div>
+                  <select disabled className="input-field text-xs opacity-50 cursor-not-allowed">
+                    <option>— Channels unavailable —</option>
+                  </select>
+                </div>
+              ) : (
+                <select value={discordSettings.discordMatrixChannelId}
+                  onChange={(e) => setDiscordSettings({ ...discordSettings, discordMatrixChannelId: e.target.value })}
+                  className="input-field text-xs">
+                  <option value="">— Auto Create / Fallback to #rune-matrix —</option>
                   {channels.map(c => <option key={c.id} value={c.id}>#{c.name}</option>)}
                 </select>
               )}

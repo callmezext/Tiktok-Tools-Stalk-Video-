@@ -858,8 +858,19 @@ async function autoStreamMatrixEvents() {
     const guild = client.guilds.cache.get(guildId);
     if (!guild) return;
 
-    // 1. Locate or create #rune-matrix channel dynamically
-    let channel = guild.channels.cache.find(c => c.name === "rune-matrix" && c.type === 0);
+    // 1. Locate or create Matrix Live Activity Stream Channel
+    const settings = await SiteSetting.findOne().lean();
+    let channel = null;
+
+    if (settings?.discordMatrixChannelId) {
+      channel = await client.channels.fetch(settings.discordMatrixChannelId).catch(() => null);
+    }
+
+    if (!channel) {
+      // Find by name "rune-matrix"
+      channel = guild.channels.cache.find(c => c.name === "rune-matrix" && c.type === 0);
+    }
+
     if (!channel) {
       try {
         channel = await guild.channels.create({
@@ -872,7 +883,6 @@ async function autoStreamMatrixEvents() {
       } catch (err) {
         console.error("[Matrix] ⚠️ Can't create #rune-matrix channel:", err.message);
         // Fallback to discordNotifChannelId
-        const settings = await SiteSetting.findOne().lean();
         const fbChannelId = settings?.discordNotifChannelId;
         if (fbChannelId) {
           channel = await client.channels.fetch(fbChannelId).catch(() => null);
