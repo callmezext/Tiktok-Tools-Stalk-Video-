@@ -17,6 +17,7 @@ export interface ISiteSetting extends Document {
   // General
   siteName: string;
   supportEmail: string;
+  weeklyLeaderboardSentAt?: Date | null;
 
   // AI Assistant
   geminiApiKey: string;
@@ -44,6 +45,7 @@ const SiteSettingSchema = new Schema<ISiteSetting>(
     // General
     siteName: { type: String, default: "RuneClipy" },
     supportEmail: { type: String, default: "" },
+    weeklyLeaderboardSentAt: { type: Date, default: null },
 
     // AI Assistant
     geminiApiKey: { type: String, default: "" },

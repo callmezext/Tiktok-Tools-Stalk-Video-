@@ -55,6 +55,9 @@ export interface ICampaign extends Document {
   totalCreators: number;
   totalSubmissions: number;
 
+  // Alerts
+  budgetAlertSent: boolean;
+
   createdBy: mongoose.Types.ObjectId;
   startDate: Date;
   endDate?: Date;
@@ -112,6 +115,8 @@ const CampaignSchema = new Schema<ICampaign>(
 
     totalCreators: { type: Number, default: 0 },
     totalSubmissions: { type: Number, default: 0 },
+
+    budgetAlertSent: { type: Boolean, default: false },
 
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
     startDate: { type: Date, default: Date.now },

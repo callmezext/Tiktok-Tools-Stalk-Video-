@@ -57,6 +57,24 @@ export async function GET() {
       { $sort: { _id: 1 } },
     ]);
 
+    // ═══ Chart data: revenue per day (last 30 days) ═══
+    const revenuePerDay = await Transaction.aggregate([
+      {
+        $match: {
+          type: "payout",
+          status: "completed",
+          createdAt: { $gte: thirtyDaysAgo },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          revenue: { $sum: "$paymentFee" },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
     // ═══ Campaign stats breakdown ═══
     const campaignBreakdown = await Campaign.aggregate([
       {
@@ -113,6 +131,7 @@ export async function GET() {
       charts: {
         submissionsPerDay,
         usersPerDay,
+        revenuePerDay,
       },
       campaignBreakdown,
       topCampaigns,

@@ -20,6 +20,66 @@ import { calculateEarning } from "@/lib/utils";
 const BATCH_SIZE = 5; // Max submissions to check per run
 const MIN_CHECK_INTERVAL_MS = 60 * 60 * 1000; // 1 hour between checks per user
 
+async function checkBudgetAlerts() {
+  try {
+    const activeCampaigns = await Campaign.find({
+      status: "active",
+      $or: [{ budgetAlertSent: false }, { budgetAlertSent: { $exists: false } }],
+    });
+
+    if (activeCampaigns.length === 0) return;
+
+    const settings = await SiteSetting.findOne().lean();
+    const token = settings?.discordBotToken || process.env.DISCORD_BOT_TOKEN || "";
+    const channelId = settings?.discordNotifChannelId || "";
+
+    if (!token || !channelId) return;
+
+    for (const campaign of activeCampaigns) {
+      const pct = campaign.totalBudget > 0 ? campaign.budgetUsed / campaign.totalBudget : 0;
+      if (pct >= 0.80) {
+        console.log(`[RuneClipy:Cron] Budget alert triggered for campaign: ${campaign.title} (${(pct * 100).toFixed(1)}%)`);
+        
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://runeclipy.vercel.app";
+        const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bot ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content: "⚠️ **Budget Alert!** @here",
+            embeds: [
+              {
+                title: `Campaign Hampir Kehabisan Budget!`,
+                description: `Campaign **${campaign.title}** telah menggunakan **${(pct * 100).toFixed(1)}%** dari total budget-nya.`,
+                color: 0xffaa00,
+                fields: [
+                  { name: "💵 Total Budget", value: `$${campaign.totalBudget}`, inline: true },
+                  { name: "📉 Budget Terpakai", value: `$${campaign.budgetUsed.toFixed(2)}`, inline: true },
+                ],
+                url: `${appUrl}/campaign/${campaign._id}`,
+                timestamp: new Date().toISOString(),
+              },
+            ],
+          }),
+        });
+
+        if (res.ok) {
+          campaign.budgetAlertSent = true;
+          await campaign.save();
+          console.log(`[RuneClipy:Cron] Budget alert sent successfully for campaign: ${campaign.title}`);
+        } else {
+          const errText = await res.text();
+          console.error(`[RuneClipy:Cron] Gagal kirim notif budget alert ke Discord:`, errText);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[RuneClipy:Cron] Error checking budget alerts:", err);
+  }
+}
+
 export async function GET(req: Request) {
   // Simple auth via secret key
   const url = new URL(req.url);
@@ -30,6 +90,7 @@ export async function GET(req: Request) {
 
   try {
     await connectDB();
+    await checkBudgetAlerts();
 
     const now = new Date();
 

@@ -35,6 +35,7 @@ const BotStatusSchema = new mongoose.Schema({
 
 const SiteSettingSchema = new mongoose.Schema({
   discordGuildId: String, discordNotifChannelId: String,
+  weeklyLeaderboardSentAt: Date,
 }, { timestamps: true, strict: false });
 
 const CampaignSchema = new mongoose.Schema({
@@ -744,6 +745,60 @@ async function autoSyncRoles() {
   } catch (err) { console.error("[Auto] Role sync:", err.message); }
 }
 
+async function autoWeeklyLeaderboard() {
+  try {
+    const now = new Date();
+    // 0 is Sunday, 1 is Monday, ..., 6 is Saturday
+    if (now.getDay() !== 1) return; // Only run on Mondays
+
+    const settings = await SiteSetting.findOne();
+    if (!settings) return;
+
+    const lastSent = settings.weeklyLeaderboardSentAt;
+    if (lastSent) {
+      const diffMs = now.getTime() - new Date(lastSent).getTime();
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+      if (diffDays < 6) return; // Already sent this Monday
+    }
+
+    console.log("[Auto] Triggering Weekly Leaderboard...");
+    const channelId = settings.discordNotifChannelId;
+    if (!channelId || !client) return;
+    const channel = await client.channels.fetch(channelId).catch(() => null);
+    if (!channel) return;
+
+    const top = await User.find({ isBanned: { $ne: true }, isDeleted: { $ne: true } })
+      .sort({ "stats.totalViews": -1 })
+      .limit(10)
+      .lean();
+
+    if (!top.length) return;
+
+    const medals = ["🥇","🥈","🥉","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟"];
+    let desc = "";
+    top.forEach((u, i) => {
+      const tierE = TIER_EMOJI[u.tier] || "";
+      desc += `${medals[i]} **${u.nickname||u.username}** ${tierE}\n`;
+      desc += `   👁️ ${fmt(u.stats?.totalViews||0)} views • 💰 ${fmtCurrency(u.stats?.totalEarned)} • 🎬 ${u.stats?.totalVideos||0}\n\n`;
+    });
+
+    const e = new EmbedBuilder()
+      .setColor(0xFFD700)
+      .setTitle("🏆 Weekly Top Creators Leaderboard")
+      .setDescription(desc)
+      .setFooter({ text: "Selamat untuk para top creators! 🎉" })
+      .setTimestamp();
+
+    await channel.send({ embeds: [e] });
+    console.log("[Auto] Weekly Leaderboard posted successfully!");
+
+    settings.weeklyLeaderboardSentAt = now;
+    await settings.save();
+  } catch (err) {
+    console.error("[Auto] Weekly leaderboard failed:", err.message);
+  }
+}
+
 // ─── Bot Status ──────────────────────────────────────────
 async function updateStatus(f) { await BotStatus.updateOne({ botType: "discord" }, { $set: f }, { upsert: true }); }
 
@@ -818,12 +873,14 @@ function startAutoSystems() {
     await autoNotifyCampaigns();
     await autoNotifySubmissions();
     await autoSyncRoles();
+    await autoWeeklyLeaderboard();
   }, AUTO_CHECK_INTERVAL);
   // Run once immediately
   setTimeout(async () => {
     await autoNotifyCampaigns();
     await autoNotifySubmissions();
     await autoSyncRoles();
+    await autoWeeklyLeaderboard();
   }, 5000);
 }
 

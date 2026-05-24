@@ -40,7 +40,11 @@ function LoadingSkeleton() {
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
-  const [charts, setCharts] = useState<{ submissionsPerDay: ChartDay[]; usersPerDay: ChartDay[] }>({ submissionsPerDay: [], usersPerDay: [] });
+  const [charts, setCharts] = useState<{
+    submissionsPerDay: ChartDay[];
+    usersPerDay: ChartDay[];
+    revenuePerDay?: { _id: string; revenue: number }[];
+  }>({ submissionsPerDay: [], usersPerDay: [], revenuePerDay: [] });
   const [topCampaigns, setTopCampaigns] = useState<TopCampaign[]>([]);
   const [recentSubs, setRecentSubs] = useState<RecentSub[]>([]);
   const [breakdown, setBreakdown] = useState<CampaignBreakdown[]>([]);
@@ -52,7 +56,7 @@ export default function AdminDashboardPage() {
       .then((d) => {
         if (d.success) {
           setStats(d.stats);
-          setCharts(d.charts || { submissionsPerDay: [], usersPerDay: [] });
+          setCharts(d.charts || { submissionsPerDay: [], usersPerDay: [], revenuePerDay: [] });
           setTopCampaigns(d.topCampaigns || []);
           setRecentSubs(d.recentSubmissions || []);
           setBreakdown(d.campaignBreakdown || []);
@@ -84,10 +88,45 @@ export default function AdminDashboardPage() {
     return days;
   };
 
+  const fillRevenueDays = (data?: { _id: string; revenue: number }[]) => {
+    const days: { date: string; revenue: number }[] = [];
+    const safeData = data || [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const found = safeData.find((x) => x._id === key);
+      days.push({ date: key, revenue: found?.revenue || 0 });
+    }
+    return days;
+  };
+
   const submissionDays = fillDays(charts.submissionsPerDay);
   const userDays = fillDays(charts.usersPerDay);
+  const revenueDays = fillRevenueDays(charts.revenuePerDay);
   const maxSub = Math.max(...submissionDays.map((d) => d.count), 1);
   const maxUser = Math.max(...userDays.map((d) => d.count), 1);
+  const maxRevenue = Math.max(...revenueDays.map((d) => d.revenue), 1);
+
+  // Generate SVG Line Chart Path for Revenue
+  const width = 500;
+  const height = 120;
+  const padding = 10;
+  const chartWidth = width - padding * 2;
+  const chartHeight = height - padding * 2;
+
+  const points = revenueDays.map((d, i) => {
+    const x = padding + (i / 29) * chartWidth;
+    const y = padding + chartHeight - (d.revenue / maxRevenue) * chartHeight;
+    return { x, y, date: d.date, revenue: d.revenue };
+  });
+
+  const pathD = points.reduce((acc, p, i) => {
+    return acc + `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`;
+  }, "");
+
+  const areaD = points.length > 0 
+    ? `${pathD} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`
+    : "";
 
   const typeEmoji: Record<string, string> = { music: "🎵", clipping: "🎬", logo: "🏷️", ugc: "📦" };
   const statusColor: Record<string, string> = {
@@ -210,6 +249,68 @@ export default function AdminDashboardPage() {
           <div className="flex justify-between mt-2 text-[9px] text-text-muted font-mono">
             <span>{userDays[0]?.date.slice(5)}</span>
             <span>{userDays[userDays.length - 1]?.date.slice(5)}</span>
+          </div>
+        </div>
+
+        {/* Revenue Chart */}
+        <div className="glass-card p-4 sm:p-6 lg:col-span-2">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h3 className="font-bold text-sm">Platform Revenue</h3>
+              <p className="text-[11px] text-text-muted">Last 30 days • Total: {formatCurrency(revenueDays.reduce((a, b) => a + b.revenue, 0))}</p>
+            </div>
+            <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg">30d</span>
+          </div>
+          <div className="relative h-32 w-full">
+            {/* SVG Line / Area */}
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+              {/* Area */}
+              {areaD && <path d={areaD} fill="url(#revenueGrad)" />}
+              {/* Line */}
+              {pathD && (
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="#10b981"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
+            </svg>
+
+            {/* Tooltip Overlay */}
+            <div className="absolute inset-0 flex items-end justify-between gap-[2px]">
+              {points.map((p, i) => (
+                <div key={i} className="admin-chart-bar flex-1 h-full relative group">
+                  {/* Invisible interactive bar that triggers tooltip */}
+                  <div className="absolute inset-0 bg-transparent cursor-pointer" />
+                  {/* Hover indicator dot */}
+                  <div 
+                    className="absolute w-2 h-2 rounded-full bg-emerald-400 border-2 border-bg-secondary opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity"
+                    style={{ 
+                      left: "50%", 
+                      transform: "translate(-50%, -50%)", 
+                      top: `${(p.y / height) * 100}%` 
+                    }}
+                  />
+                  {/* Tooltip */}
+                  <div className="admin-chart-tooltip">
+                    {p.date.slice(5)}: <strong>{formatCurrency(p.revenue)}</strong>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-between mt-2 text-[9px] text-text-muted font-mono">
+            <span>{revenueDays[0]?.date.slice(5)}</span>
+            <span>{revenueDays[revenueDays.length - 1]?.date.slice(5)}</span>
           </div>
         </div>
       </div>
