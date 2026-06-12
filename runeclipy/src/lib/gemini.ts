@@ -821,65 +821,96 @@ export async function runAIChat(
 
   for (let i = 0; i < activeKeys.length; i++) {
     const currentKey = activeKeys[i];
-    try {
-      console.log(`[AI Chat] Mencoba menggunakan API key index ke-${i} (dimulai dengan: ${currentKey.substring(0, 8)}...)`);
-      const genAI = new GoogleGenerativeAI(currentKey);
-      const model = genAI.getGenerativeModel({
-        model: modelName || "gemini-2.0-flash",
-        systemInstruction: SYSTEM_PROMPT,
-        tools: [{ functionDeclarations: tools }],
-      });
+    
+    // Build list of models to try in fallback order
+    const modelsToTry = [modelName || "gemini-2.0-flash"];
+    if (modelName && modelName !== "gemini-2.0-flash") {
+      modelsToTry.push("gemini-2.0-flash");
+    }
+    if (modelName !== "gemini-1.5-flash") {
+      modelsToTry.push("gemini-1.5-flash");
+    }
 
-      const chat = model.startChat({ history });
+    for (const currentModel of modelsToTry) {
+      try {
+        console.log(`[AI Chat] Mencoba model ${currentModel} dengan API key index ke-${i} (dimulai dengan: ${currentKey.substring(0, 8)}...)`);
+        const genAI = new GoogleGenerativeAI(currentKey);
+        const model = genAI.getGenerativeModel({
+          model: currentModel,
+          systemInstruction: SYSTEM_PROMPT,
+          tools: [{ functionDeclarations: tools }],
+        });
 
-      let result = await chat.sendMessage(newMessage);
-      let response = result.response;
+        const chat = model.startChat({ history });
 
-      // Agentic loop: handle function calls
-      while (response.functionCalls() && response.functionCalls()!.length > 0) {
-        const functionCalls = response.functionCalls()!;
-        const toolResults: Part[] = [];
+        let result = await chat.sendMessage(newMessage);
+        let response = result.response;
 
-        for (const call of functionCalls) {
-          const toolResult = await executeTool(
-            call.name,
-            call.args as Record<string, unknown>,
-            actorId,
-            actorUsername
-          );
-          toolResults.push({
-            functionResponse: {
-              name: call.name,
-              response: toolResult as Record<string, unknown>,
-            },
-          });
+        // Agentic loop: handle function calls
+        while (response.functionCalls() && response.functionCalls()!.length > 0) {
+          const functionCalls = response.functionCalls()!;
+          const toolResults: Part[] = [];
+
+          for (const call of functionCalls) {
+            const toolResult = await executeTool(
+              call.name,
+              call.args as Record<string, unknown>,
+              actorId,
+              actorUsername
+            );
+            toolResults.push({
+              functionResponse: {
+                name: call.name,
+                response: toolResult as Record<string, unknown>,
+              },
+            });
+          }
+
+          result = await chat.sendMessage(toolResults);
+          response = result.response;
         }
 
-        result = await chat.sendMessage(toolResults);
-        response = result.response;
-      }
+        return response.text();
+      } catch (error: any) {
+        console.error(`[AI Chat] Gagal menggunakan model ${currentModel} dengan key ke-${i}:`, error);
+        lastError = error;
 
-      return response.text();
-    } catch (error: any) {
-      console.error(`[AI Chat] Gagal menggunakan API key index ke-${i}:`, error);
-      lastError = error;
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        const errorMsgLower = errorMsg.toLowerCase();
 
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      const isQuotaOrKeyError =
-        errorMsg.includes("429") ||
-        errorMsg.toLowerCase().includes("quota") ||
-        errorMsg.toLowerCase().includes("resourceexhausted") ||
-        errorMsg.toLowerCase().includes("limit") ||
-        errorMsg.toLowerCase().includes("api key") ||
-        errorMsg.toLowerCase().includes("key not valid") ||
-        errorMsg.toLowerCase().includes("unauthorized") ||
-        errorMsg.includes("403");
+        // 503, 500, or 404 indicates a model-specific issue -> try next model on same key
+        const isModelIssue = 
+          errorMsg.includes("503") || 
+          errorMsg.includes("500") || 
+          errorMsg.includes("404") ||
+          errorMsgLower.includes("service unavailable") ||
+          errorMsgLower.includes("model not found") ||
+          errorMsgLower.includes("not found");
 
-      if (isQuotaOrKeyError && i < activeKeys.length - 1) {
-        console.warn(`[AI Chat] Key index ke-${i} bermasalah atau habis kuota. Mencoba API key berikutnya...`);
+        if (isModelIssue) {
+          console.warn(`[AI Chat] Model ${currentModel} sedang bermasalah (Spikes/503/Offline). Mencoba model fallback berikutnya...`);
+          continue;
+        }
+
+        // For quota/key issues (429, invalid key), break model loop to try the next API key
+        const isQuotaOrKeyError =
+          errorMsg.includes("429") ||
+          errorMsgLower.includes("quota") ||
+          errorMsgLower.includes("resourceexhausted") ||
+          errorMsgLower.includes("limit") ||
+          errorMsgLower.includes("api key") ||
+          errorMsgLower.includes("key not valid") ||
+          errorMsgLower.includes("unauthorized") ||
+          errorMsg.includes("403");
+
+        if (isQuotaOrKeyError) {
+          console.warn(`[AI Chat] Key index ke-${i} bermasalah atau habis kuota. Mencoba API key berikutnya...`);
+          break;
+        }
+
+        // Otherwise try the next model fallback
+        console.warn(`[AI Chat] Terjadi error lain pada model ${currentModel}. Mencoba model fallback berikutnya...`);
         continue;
-      } else {
-        throw error;
       }
     }
   }
@@ -889,17 +920,34 @@ export async function runAIChat(
 
 // ─── Verify API Key ───────────────────────────────────────────────────────────
 export async function verifyGeminiApiKey(apiKey: string, modelName?: string): Promise<{ valid: boolean; error?: string }> {
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: modelName || "gemini-2.0-flash" });
-    const result = await model.generateContent("Say 'OK' in one word.");
-    const text = result.response.text();
-    if (text) return { valid: true };
-    return { valid: false, error: "API tidak memberikan respons" };
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return { valid: false, error: msg };
+  const modelsToTry = [modelName || "gemini-2.0-flash"];
+  if (modelName && modelName !== "gemini-2.0-flash") {
+    modelsToTry.push("gemini-2.0-flash");
   }
+  if (modelName !== "gemini-1.5-flash") {
+    modelsToTry.push("gemini-1.5-flash");
+  }
+
+  let lastErrorMsg = "";
+  for (const currentModel of modelsToTry) {
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: currentModel });
+      const result = await model.generateContent("Say 'OK' in one word.");
+      const text = result.response.text();
+      if (text) return { valid: true };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[AI Verify] Model ${currentModel} gagal: ${msg}`);
+      lastErrorMsg = msg;
+      
+      // If it's a structural API key issue (not a model outage), fail immediately
+      if (msg.includes("API key") || msg.toLowerCase().includes("key not valid") || msg.toLowerCase().includes("invalid") || msg.includes("400")) {
+        break;
+      }
+    }
+  }
+  return { valid: false, error: lastErrorMsg || "API tidak memberikan respons" };
 }
 
 // ─── Get stored API key and Model from DB ────────────────────────────────────
