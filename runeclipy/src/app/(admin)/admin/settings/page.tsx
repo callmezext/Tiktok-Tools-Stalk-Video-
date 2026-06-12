@@ -372,13 +372,15 @@ export default function AdminSettingsPage() {
                   <option value="gemini-2.0-pro-exp-02-05">🧠 Gemini 2.0 Pro Experimental (Sangat Pintar &amp; Akurat)</option>
                   <option value="gemini-2.5-flash">🌀 Gemini 2.5 Flash (Terbaru, Seimbang &amp; Cepat)</option>
                   <option value="gemini-2.5-pro">👑 Gemini 2.5 Pro (Tercanggih, Penalaran Tingkat Tinggi)</option>
+                  <option value="gemini-3.5-flash">✨ Gemini 3.5 Flash (Next-Gen, Kecepatan &amp; Efisiensi Tinggi)</option>
+                  <option value="gemini-3.5-pro">🔮 Gemini 3.5 Pro (Next-Gen, Penalaran &amp; Akurasi Puncak)</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-text-muted">
                   ▼
                 </div>
               </div>
               <p className="text-[11px] text-text-muted mt-1.5">
-                Gunakan Gemini 2.0 Flash untuk kecepatan maksimal, atau Pro untuk tugas penalaran analitis yang kompleks.
+                Pilih model Gemini yang sesuai dengan kebutuhan Anda. Model Flash (seperti 2.0/2.5/3.5 Flash) sangat cepat dan efisien, sementara model Pro menawarkan kemampuan penalaran dan akurasi puncak.
               </p>
             </div>
 

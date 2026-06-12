@@ -103,11 +103,32 @@ export default function AdminAIChat() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(true);
+  const [activeModel, setActiveModel] = useState("Gemini 2.0 Flash");
   const [pulseCount, setPulseCount] = useState(0);
   const chatHistory = useRef<ChatHistoryItem[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const pulseTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Fetch active model on mount
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.settings?.geminiModel) {
+          const modelMap: Record<string, string> = {
+            "gemini-2.0-flash": "Gemini 2.0 Flash",
+            "gemini-2.0-pro-exp-02-05": "Gemini 2.0 Pro Exp",
+            "gemini-2.5-flash": "Gemini 2.5 Flash",
+            "gemini-2.5-pro": "Gemini 2.5 Pro",
+            "gemini-3.5-flash": "Gemini 3.5 Flash",
+            "gemini-3.5-pro": "Gemini 3.5 Pro",
+          };
+          setActiveModel(modelMap[d.settings.geminiModel] || d.settings.geminiModel);
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   // Auto-scroll
   const scrollToBottom = useCallback(() => {
@@ -284,7 +305,7 @@ export default function AdminAIChat() {
             <div className="font-bold text-sm text-text-primary">AI Admin Assistant</div>
             <div className="text-[10px] text-emerald-400 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Gemini 2.0 Flash • Online
+              {activeModel} • Online
             </div>
           </div>
           <div className="flex items-center gap-1">
