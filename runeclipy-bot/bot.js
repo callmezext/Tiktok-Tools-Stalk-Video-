@@ -708,7 +708,9 @@ async function autoNotifySubmissions() {
       } catch {}
       await Submission.updateOne({ _id: s._id }, { $set: { dmNotified: true } });
     }
-  } catch (err) { console.error("[Auto] Sub DM:", err.message); }
+  } catch (err) {
+    console.error("[Auto] Submission notif error:", err.message);
+  }
 }
 
 async function autoSyncRoles() {
@@ -759,8 +761,359 @@ async function autoSyncRoles() {
 
 // ─── AI Responder System ─────────────────────────────────
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const os = require("os");
+const { execSync } = require("child_process");
 
-async function runBotAIChat(settings, history, newMessage, systemInstruction) {
+const botTools = [
+  {
+    name: "check_server_stats",
+    description: "Periksa statistik performa server VPS (CPU, RAM, Uptime, disk space, dan proses PM2).",
+    parameters: {
+      type: "OBJECT",
+      properties: {},
+      required: [],
+    }
+  },
+  {
+    name: "get_current_time",
+    description: "Dapatkan waktu, tanggal, dan zona waktu server saat ini.",
+    parameters: {
+      type: "OBJECT",
+      properties: {},
+      required: [],
+    }
+  },
+  {
+    name: "get_platform_stats",
+    description: "Ambil statistik ringkasan platform (total user, campaign aktif, submission pending, dll).",
+    parameters: {
+      type: "OBJECT",
+      properties: {},
+      required: [],
+    }
+  },
+  {
+    name: "search_users",
+    description: "Cari data user berdasarkan role, tier, status ban, atau kata kunci pencarian.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        query: { type: "STRING", description: "Kata kunci pencarian (username/email/nickname)" },
+        role: { type: "STRING", description: "Filter berdasarkan role (user, moderator, admin)" },
+        tier: { type: "STRING", description: "Filter berdasarkan tier (bronze, silver, gold, diamond)" },
+        isBanned: { type: "BOOLEAN", description: "Filter status ban" },
+        limit: { type: "NUMBER", description: "Maksimal data yang dikembalikan (default: 10)" },
+      },
+      required: [],
+    }
+  },
+  {
+    name: "get_user_detail",
+    description: "Ambil detail lengkap data seorang user berdasarkan userId atau username.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        userId: { type: "STRING", description: "MongoDB ObjectId user" },
+        username: { type: "STRING", description: "Username user" },
+      },
+      required: [],
+    }
+  },
+  {
+    name: "edit_user",
+    description: "Ubah data akun user (seperti role, tier, saldo campaign, saldo referral, status ban).",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        userId: { type: "STRING", description: "MongoDB ObjectId user (opsional)" },
+        username: { type: "STRING", description: "Username user (opsional)" },
+        updates: {
+          type: "OBJECT",
+          description: "Data baru yang ingin diterapkan",
+          properties: {
+            role: { type: "STRING", description: "Role baru: user, moderator, admin" },
+            tier: { type: "STRING", description: "Tier baru: bronze, silver, gold, diamond" },
+            campaignBalance: { type: "NUMBER", description: "Saldo campaign baru (USD)" },
+            referralBalance: { type: "NUMBER", description: "Saldo referral baru (USD)" },
+            isBanned: { type: "BOOLEAN", description: "Status ban baru" },
+          }
+        },
+        reason: { type: "STRING", description: "Alasan pengubahan (wajib)" },
+      },
+      required: ["updates", "reason"],
+    }
+  },
+  {
+    name: "search_campaigns",
+    description: "Cari campaign yang terdaftar di platform berdasarkan status atau kata kunci.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        query: { type: "STRING", description: "Kata kunci pencarian judul campaign" },
+        status: { type: "STRING", description: "Filter status: active, paused, ended" },
+        limit: { type: "NUMBER", description: "Maksimal data (default: 10)" },
+      },
+      required: [],
+    }
+  },
+  {
+    name: "edit_campaign",
+    description: "Ubah data campaign (seperti status, budget, ratePerView).",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        campaignId: { type: "STRING", description: "MongoDB ObjectId campaign" },
+        updates: {
+          type: "OBJECT",
+          description: "Data baru yang ingin diterapkan",
+          properties: {
+            status: { type: "STRING", description: "Status baru: active, paused, ended" },
+            budget: { type: "NUMBER", description: "Budget baru (USD)" },
+            ratePerView: { type: "NUMBER", description: "Rate per view baru (USD)" },
+          }
+        },
+        reason: { type: "STRING", description: "Alasan pengubahan (wajib)" },
+      },
+      required: ["updates", "reason"],
+    }
+  },
+  {
+    name: "search_submissions",
+    description: "Cari submission video dari creator berdasarkan status, campaignId, atau userId.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        status: { type: "STRING", description: "Filter status: pending, approved, rejected, paid_out" },
+        campaignId: { type: "STRING", description: "Filter campaign ID" },
+        userId: { type: "STRING", description: "Filter user ID" },
+        limit: { type: "NUMBER", description: "Maksimal data (default: 10)" },
+      },
+      required: [],
+    }
+  },
+  {
+    name: "update_submission",
+    description: "Ubah status submission (Approve / Reject).",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        submissionId: { type: "STRING", description: "MongoDB ObjectId submission" },
+        action: { type: "STRING", description: "Aksi: approved atau rejected" },
+        rejectReason: { type: "STRING", description: "Alasan reject (wajib jika action=rejected)" },
+      },
+      required: ["submissionId", "action"],
+    }
+  }
+];
+
+async function executeBotTool(name, args, authorId, authorUsername) {
+  try {
+    switch (name) {
+      case "check_server_stats": {
+        const freeMem = os.freemem();
+        const totalMem = os.totalmem();
+        const usedMem = totalMem - freeMem;
+        const cpuLoad = os.loadavg();
+        let diskUsage = "";
+        try {
+          diskUsage = execSync("df -h / 2>/dev/null || wmic logicaldisk get size,freespace,caption").toString();
+        } catch {}
+        let pm2List = "";
+        try {
+          pm2List = execSync("pm2 list --no-color").toString();
+        } catch {}
+        
+        return {
+          os: {
+            platform: os.platform(),
+            arch: os.arch(),
+            uptime: os.uptime(),
+            cpuCount: os.cpus().length,
+            loadAvg: cpuLoad,
+          },
+          memory: {
+            totalGB: (totalMem / 1024 / 1024 / 1024).toFixed(2),
+            usedGB: (usedMem / 1024 / 1024 / 1024).toFixed(2),
+            freeGB: (freeMem / 1024 / 1024 / 1024).toFixed(2),
+            percentUsed: ((usedMem / totalMem) * 100).toFixed(1) + "%",
+          },
+          disk: diskUsage.trim() || "N/A",
+          pm2: pm2List.trim() || "N/A"
+        };
+      }
+
+      case "get_current_time": {
+        return {
+          iso: new Date().toISOString(),
+          local: new Date().toLocaleString(),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        };
+      }
+
+      case "get_platform_stats": {
+        const [totalUsers, activeCampaigns, totalCampaigns, pendingSubmissions, totalSubmissions] = await Promise.all([
+          User.countDocuments({ isDeleted: { $ne: true }, role: { $ne: "admin" } }),
+          Campaign.countDocuments({ status: "active" }),
+          Campaign.countDocuments({}),
+          Submission.countDocuments({ status: "pending" }),
+          Submission.countDocuments({}),
+        ]);
+        return { totalUsers, activeCampaigns, totalCampaigns, pendingSubmissions, totalSubmissions };
+      }
+
+      case "search_users": {
+        const filter = { isDeleted: { $ne: true } };
+        if (args.role) filter.role = args.role;
+        if (args.tier) filter.tier = args.tier;
+        if (typeof args.isBanned === "boolean") filter.isBanned = args.isBanned;
+        if (args.query) {
+          filter.$or = [
+            { username: { $regex: args.query, $options: "i" } },
+            { email: { $regex: args.query, $options: "i" } },
+            { nickname: { $regex: args.query, $options: "i" } },
+          ];
+        }
+        const users = await User.find(filter)
+          .select("username nickname email role tier campaignBalance referralBalance isBanned stats")
+          .sort({ memberSince: -1 })
+          .limit(args.limit || 10)
+          .lean();
+        return { count: users.length, users };
+      }
+
+      case "get_user_detail": {
+        const filter = { isDeleted: { $ne: true } };
+        if (args.userId) filter._id = args.userId;
+        else if (args.username) filter.username = args.username.toLowerCase();
+        const user = await User.findOne(filter).lean();
+        if (!user) return { error: "User tidak ditemukan" };
+        return { user };
+      }
+
+      case "edit_user": {
+        const filter = { isDeleted: { $ne: true } };
+        if (args.userId) filter._id = args.userId;
+        else if (args.username) filter.username = args.username.toLowerCase();
+
+        const user = await User.findOne(filter);
+        if (!user) return { error: "User tidak ditemukan" };
+
+        const { updates, reason } = args;
+        const allowedFields = ["role", "tier", "campaignBalance", "referralBalance", "isBanned"];
+        const appliedChanges = {};
+
+        for (const field of allowedFields) {
+          if (updates[field] !== undefined) {
+            user[field] = updates[field];
+            appliedChanges[field] = updates[field];
+          }
+        }
+
+        await user.save();
+
+        // Log to activity log
+        await ActivityLog.create({
+          actor: `discord_bot_${authorUsername}`,
+          actorId: authorId,
+          action: "bot_edit_user",
+          target: user._id.toString(),
+          targetType: "user",
+          details: `Bot AI Assistant mengedit user @${user.username}: ${JSON.stringify(appliedChanges)}. Alasan: ${reason}`,
+        });
+
+        return { success: true, message: `User @${user.username} berhasil diupdate`, changes: appliedChanges };
+      }
+
+      case "search_campaigns": {
+        const filter = {};
+        if (args.status) filter.status = args.status;
+        if (args.query) filter.title = { $regex: args.query, $options: "i" };
+
+        const campaigns = await Campaign.find(filter)
+          .select("title status budget spent ratePerView")
+          .sort({ createdAt: -1 })
+          .limit(args.limit || 10)
+          .lean();
+        return { count: campaigns.length, campaigns };
+      }
+
+      case "edit_campaign": {
+        const campaign = await Campaign.findById(args.campaignId);
+        if (!campaign) return { error: "Campaign tidak ditemukan" };
+
+        const { updates, reason } = args;
+        const allowedFields = ["status", "budget", "ratePerView"];
+        const appliedChanges = {};
+
+        for (const field of allowedFields) {
+          if (updates[field] !== undefined) {
+            campaign[field] = updates[field];
+            appliedChanges[field] = updates[field];
+          }
+        }
+
+        await campaign.save();
+
+        await ActivityLog.create({
+          actor: `discord_bot_${authorUsername}`,
+          actorId: authorId,
+          action: "bot_edit_campaign",
+          target: campaign._id.toString(),
+          targetType: "campaign",
+          details: `Bot AI Assistant mengedit campaign "${campaign.title}": ${JSON.stringify(appliedChanges)}. Alasan: ${reason}`,
+        });
+
+        return { success: true, message: `Campaign "${campaign.title}" berhasil diupdate`, changes: appliedChanges };
+      }
+
+      case "search_submissions": {
+        const filter = {};
+        if (args.status) filter.status = args.status;
+        if (args.campaignId) filter.campaignId = args.campaignId;
+        if (args.userId) filter.userId = args.userId;
+
+        const submissions = await Submission.find(filter)
+          .populate("userId", "username")
+          .populate("campaignId", "title")
+          .select("videoUrl views status earned")
+          .sort({ createdAt: -1 })
+          .limit(args.limit || 10)
+          .lean();
+        return { count: submissions.length, submissions };
+      }
+
+      case "update_submission": {
+        const submission = await Submission.findById(args.submissionId);
+        if (!submission) return { error: "Submission tidak ditemukan" };
+
+        submission.status = args.action;
+        if (args.action === "rejected" && args.rejectReason) {
+          submission.rejectReason = args.rejectReason;
+        }
+        submission.reviewedAt = new Date();
+        await submission.save();
+
+        await ActivityLog.create({
+          actor: `discord_bot_${authorUsername}`,
+          actorId: authorId,
+          action: `bot_${args.action}_submission`,
+          target: submission._id.toString(),
+          targetType: "submission",
+          details: `Bot AI Assistant mengubah status submission ${args.submissionId} menjadi ${args.action}`,
+        });
+
+        return { success: true, message: `Submission berhasil diubah menjadi ${args.action}` };
+      }
+
+      default:
+        return { error: `Tool ${name} tidak dikenali` };
+    }
+  } catch (err) {
+    return { error: err.message };
+  }
+}
+
+async function runBotAIChat(settings, history, newMessage, systemInstruction, enableTools, authorId, authorUsername) {
   const keys = settings.geminiApiKeys && settings.geminiApiKeys.length > 0 
     ? settings.geminiApiKeys 
     : (settings.geminiApiKey ? [settings.geminiApiKey] : []);
@@ -777,20 +1130,50 @@ async function runBotAIChat(settings, history, newMessage, systemInstruction) {
     if (settings.geminiModel && settings.geminiModel !== "gemini-2.0-flash") {
       modelsToTry.push("gemini-2.0-flash");
     }
-    if (settings.geminiModel !== "gemini-1.5-flash") {
+    if (settings.geminiModel && settings.geminiModel !== "gemini-1.5-pro") {
+      modelsToTry.push("gemini-1.5-pro");
+    }
+    if (settings.geminiModel && settings.geminiModel !== "gemini-1.5-flash") {
       modelsToTry.push("gemini-1.5-flash");
     }
     
     for (const currentModel of modelsToTry) {
       try {
         const genAI = new GoogleGenerativeAI(currentKey);
-        const model = genAI.getGenerativeModel({
+        const modelOptions = {
           model: currentModel,
           systemInstruction: systemInstruction,
-        });
+        };
+        if (enableTools) {
+          modelOptions.tools = [{ functionDeclarations: botTools }];
+        }
+        const model = genAI.getGenerativeModel(modelOptions);
         const chat = model.startChat({ history });
-        const result = await chat.sendMessage(newMessage);
-        return result.response.text();
+        
+        let result = await chat.sendMessage(newMessage);
+        let response = result.response;
+
+        // Tool calling loop
+        while (enableTools && response.functionCalls() && response.functionCalls().length > 0) {
+          const functionCalls = response.functionCalls();
+          const toolResults = [];
+          
+          for (const call of functionCalls) {
+            console.log(`[Bot AI Tool] Executing: ${call.name} with args:`, call.args);
+            const toolResult = await executeBotTool(call.name, call.args, authorId, authorUsername);
+            toolResults.push({
+              functionResponse: {
+                name: call.name,
+                response: toolResult,
+              }
+            });
+          }
+          
+          result = await chat.sendMessage(toolResults);
+          response = result.response;
+        }
+
+        return response.text();
       } catch (error) {
         console.error(`[Bot AI] Gagal dengan model ${currentModel} menggunakan key index ke-${i}:`, error.message);
         lastError = error;
@@ -874,11 +1257,22 @@ async function handleMessageCreate(message) {
 
     let systemInstruction = "";
     if (isAdmin) {
-      systemInstruction = `Kamu adalah AI Assistant tingkat tinggi untuk platform RuneClipy. 
-Kamu sedang berbicara dengan OWNER / ADMIN platform di Discord.
-Kamu memiliki wewenang untuk membantu mereka mengelola platform, menganalisis data, dll.
-Bicaralah dengan gaya bahasa yang to-the-point, sangat cerdas, profesional, dan hilangkan basa-basi.
-Gunakan format markdown yang rapi.`;
+      systemInstruction = `Kamu adalah RuneClipy Admin Copilot — asisten AI eksekutif, cerdas, loyal, dan serba bisa untuk Owner/Admin platform RuneClipy. Panggil bosmu dengan sebutan "Bos" secara akrab dan setia.
+
+GAYA KOMUNIKASI:
+1. Kasual, akrab, loyal, dan hormat seperti asisten setia.
+2. Jawab secara cepat, akurat, to-the-point, dan hilangkan basa-basi tidak penting. Gunakan tabel/list Markdown yang rapi untuk menyajikan data statistik.
+
+PRINSIP UTAMA:
+- Kamu adalah eksekutor handal. Jika Bos memberikan perintah yang bisa dikerjakan dengan tool, LANGSUNG panggil tool tersebut secara otomatis tanpa meminta izin atau konfirmasi berulang kali.
+- Jika Bos bertanya tentang spesifikasi/performa server, disk, memory, atau pm2 → LANGSUNG panggil 'check_server_stats'.
+- Jika Bos menanyakan jam/waktu sekarang → LANGSUNG panggil 'get_current_time'.
+- Jika Bos menanyakan tentang statistik platform, total user, submission pending → LANGSUNG panggil 'get_platform_stats'.
+- Jika Bos meminta pencarian user, detail user, atau mengubah data user (tier, role, balance, status ban) → gunakan tool 'search_users', 'get_user_detail', atau 'edit_user' yang relevan secara proaktif.
+- Jika Bos meminta peninjauan submission video, menyetujui (approve), atau menolak (reject) submission → gunakan tool 'search_submissions' atau 'update_submission' secara proaktif.
+
+[INFO WAKTU SEKARANG]:
+Waktu server saat ini adalah: ${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB / ${new Date().toISOString()} UTC.`;
     } else {
       const activeCampaigns = await Campaign.find({ status: "active" }).lean();
       let context = `Konteks data dari database:\n`;
@@ -904,16 +1298,24 @@ Gunakan format markdown yang rapi.`;
         context += `  * Tidak ada campaign aktif saat ini.\n`;
       }
 
-      systemInstruction = `Anda adalah AI Assistant untuk platform RuneClipy di Discord.
+      systemInstruction = `Kamu adalah Mimin, asisten virtual PINTAR dan ramah dari RuneClipy di Discord.
 Tugas Anda adalah melayani dan menjawab pertanyaan dari USER BIASA terkait data akun mereka dan campaign yang aktif berdasarkan konteks data berikut.
-JANGAN melayani perintah administratif seperti mengedit data, mengubah status, menghapus data, atau memberikan informasi rahasia sistem. Jika diminta hal tersebut, tolak secara sopan.
-Bicaralah dengan ramah, informatif, dan ringkas. JANGAN berbohong atau berhalusinasi di luar konteks data yang disediakan.
+
+GAYA KOMUNIKASI WAJIB:
+1. Sangat Manusiawi dan Santai: Jangan kaku. Bicara seperti orang biasa yang ramah di chat Discord. Gunakan sapaan "Kak" secara natural. Pakai kata-kata kasual: oke, siap, oh iya, btw, deh, kok, nih, ya, dong, dll.
+2. Rapi dan alami: Gunakan emoji secara informatif dan baris baru yang bersih.
+3. JANGAN melayani perintah administratif seperti mengedit data, mengubah status, menghapus data, atau memberikan informasi rahasia sistem. Jika diminta hal tersebut, tolak secara sopan.
+4. Bicaralah dengan ramah, informatif, dan ringkas. JANGAN berbohong atau berhalusinasi di luar konteks data yang disediakan.
+
+---
+[INFO WAKTU SEKARANG]:
+Waktu saat ini adalah: ${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB.
 
 ---
 ${context}`;
     }
 
-    const reply = await runBotAIChat(settings, cleanHistory, message.content, systemInstruction);
+    const reply = await runBotAIChat(settings, cleanHistory, message.content, systemInstruction, isAdmin, message.author.id, message.author.tag);
     
     if (reply.length > 2000) {
       const chunks = reply.match(/[\s\S]{1,2000}/g) || [];
