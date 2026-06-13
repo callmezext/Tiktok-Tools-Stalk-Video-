@@ -44,6 +44,15 @@ const sortOptions = [
   { value: "rate", label: "Highest Rate" },
 ];
 
+const formatCompactCurrency = (amount: number) => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount);
+};
+
 export default function DashboardPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -410,14 +419,14 @@ export default function DashboardPage() {
 
       {/* Campaign Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="glass-card p-0 overflow-hidden animate-pulse">
-              <div className="h-40 bg-bg-tertiary" />
-              <div className="p-4 space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="glass-card p-4 overflow-hidden animate-pulse flex gap-4 h-[116px]">
+              <div className="w-20 h-20 bg-bg-tertiary rounded-2xl flex-shrink-0" />
+              <div className="flex-1 space-y-3 py-1">
                 <div className="h-4 bg-bg-tertiary rounded w-3/4" />
+                <div className="h-3 bg-bg-tertiary rounded w-1/4" />
                 <div className="h-3 bg-bg-tertiary rounded w-1/2" />
-                <div className="h-3 bg-bg-tertiary rounded w-full" />
               </div>
             </div>
           ))}
@@ -429,63 +438,109 @@ export default function DashboardPage() {
           <p className="text-text-muted text-sm">Check back later for new campaigns!</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredCampaigns.map((campaign) => (
-            <div key={campaign._id} className="glass-card overflow-hidden group hover:border-accent/20 transition-all">
-              {/* Cover */}
-              <div className="relative h-40 bg-bg-tertiary overflow-hidden">
-                {campaign.coverImage ? (
-                  <img
-                    src={campaign.coverImage}
-                    alt={campaign.title}
-                    className="w-full h-full object-cover md:group-hover:scale-105 transition-transform duration-500 [backface-visibility:hidden]"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center opacity-30"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-text-muted"><path d="M9 18V5l12-3v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
-                )}
-                {/* Badges */}
-                <div className="absolute bottom-2 left-2 flex gap-1.5">
-                  <span className={`badge badge-${campaign.type}`}>{campaign.type}</span>
-                  {budgetPercent(campaign) < 5 && <span className="badge badge-new">New</span>}
+            <Link
+              href={`/dashboard/detail/${campaign._id}`}
+              key={campaign._id}
+              className="glass-card !p-4 block group hover:border-accent/30 transition-all relative overflow-hidden"
+            >
+              {/* Cover & Title Flex Row */}
+              <div className="flex gap-4 items-start mb-4">
+                {/* Cover Thumbnail */}
+                <div className="relative w-20 h-20 rounded-2xl bg-bg-tertiary overflow-hidden flex-shrink-0">
+                  {campaign.coverImage ? (
+                    <img
+                      src={campaign.coverImage}
+                      alt={campaign.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 [backface-visibility:hidden]"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center opacity-30">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-text-muted">
+                        <path d="M9 18V5l12-3v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                      </svg>
+                    </div>
+                  )}
+                  {/* Category text overlay on bottom of thumbnail */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-[2px] py-1 text-center">
+                    <span className={cn(
+                      "text-[9px] font-extrabold uppercase tracking-wider",
+                      campaign.type === 'music' ? 'text-pink' :
+                      campaign.type === 'clipping' ? 'text-success' :
+                      campaign.type === 'logo' ? 'text-info' :
+                      campaign.type === 'ugc' ? 'text-warning' : 'text-accent-light'
+                    )}>
+                      {campaign.type}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Title & Platform */}
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-sm text-text-primary line-clamp-2 leading-snug group-hover:text-accent-light transition-colors">
+                    {campaign.title}
+                  </h3>
+                  
+                  {/* Platform Icons */}
+                  <div className="flex items-center gap-1.5 mt-2">
+                    {campaign.supportedPlatforms?.map((p) => {
+                      const platformLower = p.toLowerCase();
+                      if (platformLower === "tiktok") {
+                        return (
+                          <svg key={p} className="w-3.5 h-3.5 text-text-muted group-hover:text-text-secondary transition-colors" fill="currentColor" viewBox="0 0 24 24" title="TikTok">
+                            <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.89-.6-4.09-1.5-1.2-1-2.02-2.44-2.24-3.99-.01 1.72-.01 3.43-.01 5.14v6.86c-.07 1.71-.56 3.47-1.74 4.72-1.34 1.48-3.41 2.27-5.42 2.29-2.08.06-4.22-.64-5.69-2.14C1.58 19.86.77 17.57.9 15.22c.07-2.16.94-4.32 2.65-5.66 1.6-1.3 3.79-1.84 5.86-1.5v4.05c-1.22-.24-2.58-.1-3.6.59-1.07.67-1.72 1.94-1.73 3.2-.01 1.25.59 2.5 1.59 3.23 1.09.85 2.61 1.01 3.89.44 1.11-.46 1.84-1.57 1.94-2.77.02-2.31.01-4.62.01-6.93V.02z" />
+                          </svg>
+                        );
+                      }
+                      if (platformLower === "instagram") {
+                        return (
+                          <svg key={p} className="w-3.5 h-3.5 text-text-muted group-hover:text-text-secondary transition-colors" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" title="Instagram">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                          </svg>
+                        );
+                      }
+                      if (platformLower === "youtube") {
+                        return (
+                          <svg key={p} className="w-3.5 h-3.5 text-text-muted group-hover:text-text-secondary transition-colors" fill="currentColor" viewBox="0 0 24 24" title="YouTube">
+                            <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.518 3.545 12 3.545 12 3.545s-7.518 0-9.388.508a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.87.508 9.388.508 9.388.508s7.518 0 9.388-.508a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                          </svg>
+                        );
+                      }
+                      return <span key={p} className="text-[10px] text-text-muted bg-bg-tertiary px-1.5 py-0.5 rounded capitalize">{p}</span>;
+                    })}
+                  </div>
                 </div>
               </div>
 
-              {/* Content */}
-              <div className="p-4">
-                <h3 className="font-bold text-sm mb-3 line-clamp-2 leading-snug min-h-[2.5rem]">{campaign.title}</h3>
-
-                <div className="space-y-2 text-xs mb-4">
-                  <div className="flex justify-between">
-                    <span className="text-text-muted">Creators</span>
-                    <span className="font-medium">{formatNumber(campaign.totalCreators)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-text-muted">Budget</span>
-                    <span className="font-bold text-success">{formatCurrency(campaign.totalBudget)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-text-muted">Budget Used</span>
-                    <span className="font-medium">{budgetPercent(campaign)}%</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${budgetPercent(campaign)}%` }} />
+              {/* Active & Rate Row */}
+              <div className="flex justify-between items-end text-xs mb-4">
+                <div>
+                  <div className="text-[10px] text-text-muted uppercase tracking-wider mb-0.5">Active</div>
+                  <div className="font-bold text-sm">
+                    <span className="text-text-primary">{budgetPercent(campaign)}%</span>
+                    <span className="text-text-muted font-normal"> / {formatCompactCurrency(campaign.totalBudget)}</span>
                   </div>
                 </div>
-
-                <div className="flex justify-between items-end">
-                  <div>
-                    <div className="text-[10px] text-text-muted uppercase tracking-wider">Rate per 1M Views</div>
-                    <div className="text-base font-extrabold gradient-text">{formatCurrency(campaign.ratePerMillionViews)}</div>
+                <div className="text-right">
+                  <div className="text-[10px] text-text-muted uppercase tracking-wider mb-0.5">Rate</div>
+                  <div className="font-bold text-sm">
+                    <span className="text-text-primary">{formatCompactCurrency(campaign.ratePerMillionViews)}</span>
+                    <span className="text-text-muted font-normal"> / 1M</span>
                   </div>
-                  <Link
-                    href={`/dashboard/detail/${campaign._id}`}
-                    className="px-4 py-2 rounded-lg bg-error text-white text-xs font-bold hover:bg-error/80 transition-colors"
-                  >
-                    Details
-                  </Link>
                 </div>
               </div>
-            </div>
+
+              {/* Progress Bar */}
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-bg-tertiary">
+                <div
+                  className="h-full bg-success transition-all duration-500"
+                  style={{ width: `${Math.min(100, budgetPercent(campaign))}%` }}
+                />
+              </div>
+            </Link>
           ))}
         </div>
       )}
