@@ -248,7 +248,7 @@ export default function DashboardPage() {
                     </span>
                   </div>
                 </div>
-                {/* My Activity Button — green like reference */}
+                {/* My Campaigns Button — green like reference */}
                 <Link
                   href="/campaigns"
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-success/15 text-success text-xs font-bold hover:bg-success/25 transition-all border border-success/20 flex-shrink-0 self-start sm:self-auto w-fit"
@@ -256,7 +256,7 @@ export default function DashboardPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                   </svg>
-                  My Activity
+                  My Campaigns
                 </Link>
               </div>
 
@@ -335,7 +335,7 @@ export default function DashboardPage() {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-bold">My Activity</div>
+            <div className="text-sm font-bold">My Submissions</div>
             <div className="text-[11px] text-text-muted">Track your video progress</div>
           </div>
         </Link>
